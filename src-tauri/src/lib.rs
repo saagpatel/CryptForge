@@ -1,3 +1,29 @@
+// Temporary legacy lint allowlist; keep narrow and retire over time.
+#![allow(
+    clippy::collapsible_if,
+    clippy::derivable_impls,
+    clippy::doc_lazy_continuation,
+    clippy::field_reassign_with_default,
+    clippy::if_same_then_else,
+    clippy::len_without_is_empty,
+    clippy::let_and_return,
+    clippy::manual_contains,
+    clippy::manual_div_ceil,
+    clippy::manual_flatten,
+    clippy::manual_is_multiple_of,
+    clippy::manual_range_contains,
+    clippy::needless_borrow,
+    clippy::needless_range_loop,
+    clippy::new_without_default,
+    clippy::ptr_arg,
+    clippy::redundant_closure,
+    clippy::single_match,
+    clippy::too_many_arguments,
+    clippy::unnecessary_cast,
+    clippy::unnecessary_map_or,
+    clippy::useless_format
+)]
+
 pub mod commands;
 pub mod engine;
 pub mod flavor;
