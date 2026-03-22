@@ -1,0 +1,254 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag (for example, v1.2.3)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-artifacts:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux
+            os: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+          - platform: windows
+            os: windows-2022
+            target: x86_64-pc-windows-msvc
+          - platform: macos
+            os: macos-14
+            target: x86_64-apple-darwin
+          - platform: macos-arm64
+            os: macos-14
+            target: aarch64-apple-darwin
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Determine platform build eligibility
+        id: eligibility
+        shell: bash
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          should_build="true"
+          if [[ "${{ runner.os }}" == "macOS" ]]; then
+            if [[ -z "${APPLE_CERTIFICATE}" || -z "${APPLE_CERTIFICATE_PASSWORD}" || -z "${APPLE_SIGNING_IDENTITY}" || -z "${APPLE_ID}" || -z "${APPLE_PASSWORD}" || -z "${APPLE_TEAM_ID}" ]]; then
+              echo "Apple signing/notarization secrets are not configured; skipping macOS artifacts."
+              should_build="false"
+            fi
+          fi
+          echo "should_build=$should_build" >> "$GITHUB_OUTPUT"
+
+      - name: Install Linux native dependencies
+        if: runner.os == 'Linux' && steps.eligibility.outputs.should_build == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libglib2.0-dev pkg-config libssl-dev libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - name: Install dependencies
+        if: steps.eligibility.outputs.should_build == 'true'
+        run: npm ci
+
+      - name: Verify quality gates
+        if: steps.eligibility.outputs.should_build == 'true'
+        run: npm run verify
+
+      - name: Build desktop bundle (macOS signed)
+        if: runner.os == 'macOS' && steps.eligibility.outputs.should_build == 'true'
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+        run: npm run tauri -- build --target ${{ matrix.target }}
+
+      - name: Build desktop bundle (Windows signed)
+        if: runner.os == 'Windows' && steps.eligibility.outputs.should_build == 'true'
+        env:
+          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+        run: npm run tauri -- build --target ${{ matrix.target }}
+
+      - name: Build desktop bundle (Linux)
+        if: runner.os == 'Linux' && steps.eligibility.outputs.should_build == 'true'
+        env:
+          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+        run: npm run tauri -- build --target ${{ matrix.target }}
+
+      - name: Validate macOS notarization and stapling
+        if: runner.os == 'macOS' && steps.eligibility.outputs.should_build == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          for dmg in src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg; do
+            xcrun stapler validate "$dmg"
+            spctl --assess --type open --verbose=4 "$dmg"
+          done
+
+      - name: Validate Windows Authenticode signatures
+        if: runner.os == 'Windows' && steps.eligibility.outputs.should_build == 'true'
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem -Path "src-tauri/target/${{ matrix.target }}/release/bundle" -Recurse -Include *.exe,*.msi
+          if ($files.Count -eq 0) { throw "No Windows bundles found" }
+          foreach ($f in $files) {
+            $sig = Get-AuthenticodeSignature -FilePath $f.FullName
+            if ($sig.Status -ne "Valid") { throw "Invalid signature: $($f.FullName) [$($sig.Status)]" }
+          }
+
+      - name: Collect bundle paths
+        if: steps.eligibility.outputs.should_build == 'true'
+        id: bundle_paths
+        shell: bash
+        run: |
+          mapfile -t files < <(find src-tauri/target/${{ matrix.target }}/release/bundle -type f \( -name "*.AppImage" -o -name "*.dmg" -o -name "*.msi" -o -name "*.exe" -o -name "*.deb" -o -name "*.sig" -o -name "latest*.json" \))
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No release bundles found"
+            exit 1
+          fi
+          {
+            echo "paths<<EOF"
+            printf '%s\n' "${files[@]}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Upload release artifacts
+        if: steps.eligibility.outputs.should_build == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-${{ matrix.platform }}
+          retention-days: 14
+          path: ${{ steps.bundle_paths.outputs.paths }}
+
+      - name: Attest build provenance
+        if: steps.eligibility.outputs.should_build == 'true'
+        uses: actions/attest-build-provenance@43d14bc2b83dec42d39ecae14e916627a18bb661
+        with:
+          subject-path: ${{ steps.bundle_paths.outputs.paths }}
+
+  publish-release:
+    needs: build-artifacts
+    runs-on: ubuntu-24.04
+    environment: production
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release tag
+        id: resolve_tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            tag="${{ inputs.tag }}"
+          else
+            tag="${GITHUB_REF_NAME}"
+          fi
+          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid tag format: $tag"
+            exit 1
+          fi
+          git fetch --tags --force
+          git rev-parse "$tag" >/dev/null 2>&1
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Download bundled artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: release-*
+          path: release-artifacts
+          merge-multiple: true
+
+      - name: Generate SHA256SUMS
+        shell: bash
+        run: |
+          set -euo pipefail
+          find release-artifacts -type f -print0 | sort -z | xargs -0 sha256sum > release-artifacts/SHA256SUMS.txt
+
+      - name: Ensure release exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${{ steps.resolve_tag.outputs.tag }}"
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            gh release create "$tag" --verify-tag --draft --title "CryptForge $tag" --notes "Automated release for $tag"
+          fi
+
+      - name: Upload assets to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${{ steps.resolve_tag.outputs.tag }}"
+          mapfile -t assets < <(find release-artifacts -type f \( -name "*.AppImage" -o -name "*.dmg" -o -name "*.msi" -o -name "*.exe" -o -name "*.deb" -o -name "*.sig" -o -name "latest*.json" -o -name "SHA256SUMS.txt" \) | sort)
+          if [ ${#assets[@]} -eq 0 ]; then
+            echo "No release assets found"
+            exit 1
+          fi
+          gh release upload "$tag" "${assets[@]}" --clobber
+
+      - name: Release integrity verification
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${{ steps.resolve_tag.outputs.tag }}"
+          gh release verify "$tag"
+          while IFS= read -r file; do
+            gh release verify-asset "$tag" "$(basename "$file")"
+          done < <(find release-artifacts -maxdepth 1 -type f ! -name "SHA256SUMS.txt" | sort)
