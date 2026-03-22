@@ -40,11 +40,7 @@ pub fn effective_speed(entity: &Entity) -> i32 {
 }
 
 /// Resolve an attack between attacker and target. Returns (damage, is_crit, killed).
-pub fn resolve_attack(
-    attacker: &Entity,
-    target: &Entity,
-    rng: &mut impl Rng,
-) -> AttackResult {
+pub fn resolve_attack(attacker: &Entity, target: &Entity, rng: &mut impl Rng) -> AttackResult {
     let atk = effective_attack(attacker);
     let def = effective_defense(target);
 
@@ -102,7 +98,11 @@ pub fn resolve_ranged_attack(
 
     let variance = if base_damage > 0 {
         let range = (base_damage as f64 * 0.2).ceil() as i32;
-        if range > 0 { rng.gen_range(-range..=range) } else { 0 }
+        if range > 0 {
+            rng.gen_range(-range..=range)
+        } else {
+            0
+        }
     } else {
         0
     };
@@ -118,7 +118,11 @@ pub fn resolve_ranged_attack(
     let target_hp = target.health.as_ref().map_or(0, |h| h.current);
     let killed = damage >= target_hp;
 
-    AttackResult { damage, is_crit, killed }
+    AttackResult {
+        damage,
+        is_crit,
+        killed,
+    }
 }
 
 /// Get the ranged stats from the equipped weapon, if any.
@@ -182,11 +186,7 @@ fn equipment_defense_bonus(entity: &Entity) -> i32 {
     let mut bonus = 0;
 
     // Check all defense-granting slots
-    let slots = [
-        equipment.head,
-        equipment.body,
-        equipment.off_hand,
-    ];
+    let slots = [equipment.head, equipment.body, equipment.off_hand];
 
     for slot_id in slots.iter().flatten() {
         if let Some(item) = inventory.items.iter().find(|i| i.id == *slot_id) {
@@ -412,7 +412,11 @@ mod tests {
 
         // Expected base: 10 - 2 = 8, variance ±2 (20% of 8), no crit
         let result = resolve_attack(&attacker, &target, &mut rng);
-        assert!(result.damage >= 6 && result.damage <= 10, "Damage {} out of expected range 6-10", result.damage);
+        assert!(
+            result.damage >= 6 && result.damage <= 10,
+            "Damage {} out of expected range 6-10",
+            result.damage
+        );
     }
 
     #[test]
@@ -506,8 +510,11 @@ mod tests {
 
         // With +3 damage bonus: effective atk = 5 + 3 = 8, base damage = 8 - 2 = 6
         let result = resolve_ranged_attack(&attacker, &target, 3, &mut rng);
-        assert!(result.damage >= 4 && result.damage <= 8,
-            "Ranged damage {} should be in range 4-8 (6 ±20%)", result.damage);
+        assert!(
+            result.damage >= 4 && result.damage <= 8,
+            "Ranged damage {} should be in range 4-8 (6 ±20%)",
+            result.damage
+        );
     }
 
     #[test]
@@ -551,7 +558,10 @@ mod tests {
                 charges: None,
                 energy_cost: 100,
                 ammo_type: Some(AmmoType::Arrow),
-                ranged: Some(RangedStats { range: 5, damage_bonus: 1 }),
+                ranged: Some(RangedStats {
+                    range: 5,
+                    damage_bonus: 1,
+                }),
                 hunger_restore: 0,
                 enchant_level: 0,
                 identified: true,

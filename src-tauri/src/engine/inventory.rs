@@ -1,5 +1,5 @@
-use super::entity::*;
 use super::combat;
+use super::entity::*;
 
 /// Calculate effective stats for a player entity including equipment.
 pub fn calculate_effective_stats(entity: &Entity) -> EffectiveStats {
@@ -45,11 +45,18 @@ pub fn get_inventory_item(entity: &Entity, index: usize) -> Option<&Entity> {
 }
 
 /// Equip an item to its appropriate slot. Returns the previously equipped item ID if any.
-pub fn equip_item(entity: &mut Entity, item_id: EntityId) -> Result<Option<EntityId>, &'static str> {
+pub fn equip_item(
+    entity: &mut Entity,
+    item_id: EntityId,
+) -> Result<Option<EntityId>, &'static str> {
     // Find the item in inventory
     let slot = {
         let inv = entity.inventory.as_ref().ok_or("No inventory")?;
-        let item = inv.items.iter().find(|i| i.id == item_id).ok_or("Item not in inventory")?;
+        let item = inv
+            .items
+            .iter()
+            .find(|i| i.id == item_id)
+            .ok_or("Item not in inventory")?;
         let props = item.item.as_ref().ok_or("Not an item")?;
         props.slot.ok_or("Item can't be equipped")?
     };
@@ -72,9 +79,16 @@ pub fn unequip_slot(entity: &mut Entity, slot: EquipSlot) -> Option<EntityId> {
 /// Check if an item is currently equipped.
 pub fn is_equipped(entity: &Entity, item_id: EntityId) -> bool {
     entity.equipment.as_ref().map_or(false, |equip| {
-        [equip.main_hand, equip.off_hand, equip.head, equip.body, equip.ring, equip.amulet]
-            .iter()
-            .any(|slot| *slot == Some(item_id))
+        [
+            equip.main_hand,
+            equip.off_hand,
+            equip.head,
+            equip.body,
+            equip.ring,
+            equip.amulet,
+        ]
+        .iter()
+        .any(|slot| *slot == Some(item_id))
     })
 }
 
@@ -85,13 +99,19 @@ pub fn get_equipped(entity: &Entity, slot: EquipSlot) -> Option<EntityId> {
 
 /// Check if inventory has room.
 pub fn has_inventory_space(entity: &Entity) -> bool {
-    entity.inventory.as_ref().map_or(false, |inv| !inv.is_full())
+    entity
+        .inventory
+        .as_ref()
+        .map_or(false, |inv| !inv.is_full())
 }
 
 /// Find an item in inventory by name.
 pub fn find_item_by_name(entity: &Entity, name: &str) -> Option<EntityId> {
-    entity.inventory.as_ref()?
-        .items.iter()
+    entity
+        .inventory
+        .as_ref()?
+        .items
+        .iter()
         .find(|i| i.name == name)
         .map(|i| i.id)
 }

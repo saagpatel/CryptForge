@@ -170,8 +170,8 @@ fn carve_room(map: &mut Map, room: &Room) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rand::SeedableRng;
     use rand::rngs::StdRng;
+    use rand::SeedableRng;
 
     #[test]
     fn bsp_generates_connected_maps() {

@@ -165,7 +165,10 @@ impl World {
         world.recompute_fov();
         world.recompute_dijkstra();
 
-        world.push_message("Welcome to CryptForge! Press ? for help.", LogSeverity::Info);
+        world.push_message(
+            "Welcome to CryptForge! Press ? for help.",
+            LogSeverity::Info,
+        );
 
         world
     }
@@ -323,8 +326,14 @@ impl World {
                     events.extend(attack_events);
                 } else if let Some(shop_id) = self.shop_entity_at(new_pos) {
                     // Bump into shopkeeper opens shop
-                    let shop_name = self.get_entity(shop_id).map(|e| e.name.clone()).unwrap_or_default();
-                    self.push_message(&format!("{} welcomes you to their shop.", shop_name), LogSeverity::Info);
+                    let shop_name = self
+                        .get_entity(shop_id)
+                        .map(|e| e.name.clone())
+                        .unwrap_or_default();
+                    self.push_message(
+                        &format!("{} welcomes you to their shop.", shop_name),
+                        LogSeverity::Info,
+                    );
                 } else if self.can_move_to(new_pos) {
                     // Check for doors
                     if let Some(door_id) = self.door_at(new_pos) {
@@ -479,10 +488,14 @@ impl World {
                 if let Some(ab) = ability {
                     if self.mana >= ab.mana_cost {
                         self.mana -= ab.mana_cost;
-                        events.push(GameEvent::ManaChanged { amount: -ab.mana_cost });
+                        events.push(GameEvent::ManaChanged {
+                            amount: -ab.mana_cost,
+                        });
                         self.push_message(&format!("You cast {}!", ab.name), LogSeverity::Good);
                         let pos = target.unwrap_or_else(|| {
-                            self.get_entity(self.player_id).map(|p| p.position).unwrap_or(Position::new(0, 0))
+                            self.get_entity(self.player_id)
+                                .map(|p| p.position)
+                                .unwrap_or(Position::new(0, 0))
                         });
                         events.push(GameEvent::AbilityUsed {
                             name: ab.name.clone(),
@@ -497,33 +510,53 @@ impl World {
                 }
             }
 
-            PlayerActionType::Craft { weapon_idx, scroll_idx } => {
+            PlayerActionType::Craft {
+                weapon_idx,
+                scroll_idx,
+            } => {
                 // Check if player is adjacent to an anvil
                 let player_pos = self.get_entity(self.player_id).unwrap().position;
                 let has_anvil = self.entities.iter().any(|e| {
-                    e.interactive.as_ref().map_or(false, |i| i.interaction_type == InteractionType::Anvil)
+                    e.interactive
+                        .as_ref()
+                        .map_or(false, |i| i.interaction_type == InteractionType::Anvil)
                         && e.position.chebyshev_distance(&player_pos) <= 1
                 });
 
                 if !has_anvil {
-                    self.push_message("You need to be next to an anvil to craft.", LogSeverity::Warning);
+                    self.push_message(
+                        "You need to be next to an anvil to craft.",
+                        LogSeverity::Warning,
+                    );
                 } else {
                     // Simple enchanting: increment weapon power, consume scroll, deduct gold
                     let weapon_idx = *weapon_idx as usize;
                     let scroll_idx = *scroll_idx as usize;
 
-                    let (weapon_name, enchant_level) = self.get_entity(self.player_id)
+                    let (weapon_name, enchant_level) = self
+                        .get_entity(self.player_id)
                         .and_then(|p| p.inventory.as_ref())
                         .and_then(|inv| inv.items.get(weapon_idx))
-                        .map(|i| (i.name.clone(), i.item.as_ref().map_or(0, |p| p.enchant_level)))
+                        .map(|i| {
+                            (
+                                i.name.clone(),
+                                i.item.as_ref().map_or(0, |p| p.enchant_level),
+                            )
+                        })
                         .unwrap_or(("".to_string(), 0));
 
                     if enchant_level >= 3 {
-                        self.push_message("This weapon is already at maximum enchantment (+3).", LogSeverity::Warning);
+                        self.push_message(
+                            "This weapon is already at maximum enchantment (+3).",
+                            LogSeverity::Warning,
+                        );
                     } else {
                         let cost = (10 * (enchant_level + 1)) as u32;
                         if self.gold < cost {
-                            self.push_message(&format!("You need {} gold to enchant.", cost), LogSeverity::Warning);
+                            self.push_message(
+                                &format!("You need {} gold to enchant.", cost),
+                                LogSeverity::Warning,
+                            );
                         } else {
                             self.gold -= cost;
 
@@ -546,7 +579,12 @@ impl World {
                                             props.enchant_level = new_level;
                                         }
                                         // Append +N to name
-                                        item.name = format!("{} +{}", weapon_name.trim_end_matches(&format!(" +{}", enchant_level)), new_level);
+                                        item.name = format!(
+                                            "{} +{}",
+                                            weapon_name
+                                                .trim_end_matches(&format!(" +{}", enchant_level)),
+                                            new_level
+                                        );
                                     }
                                 }
                             }
@@ -607,7 +645,9 @@ impl World {
         }
 
         // Determine damage_type from attacker's on_hit effect
-        let damage_type = attacker.combat.as_ref()
+        let damage_type = attacker
+            .combat
+            .as_ref()
             .and_then(|c| c.on_hit.as_ref())
             .map(|oh| match oh {
                 OnHitEffect::Burn { .. } => "fire",
@@ -635,12 +675,18 @@ impl World {
 
         if result.is_crit {
             self.push_message(
-                &format!("{} critically hits {} for {} damage!", attacker_name, target_name, result.damage),
+                &format!(
+                    "{} critically hits {} for {} damage!",
+                    attacker_name, target_name, result.damage
+                ),
                 LogSeverity::Danger,
             );
         } else {
             self.push_message(
-                &format!("{} hits {} for {} damage.", attacker_name, target_name, result.damage),
+                &format!(
+                    "{} hits {} for {} damage.",
+                    attacker_name, target_name, result.damage
+                ),
                 LogSeverity::Info,
             );
         }
@@ -660,7 +706,14 @@ impl World {
             // Apply on-hit effects from attacker's combat stats
             let on_hit = attacker.combat.as_ref().and_then(|c| c.on_hit.clone());
             if let Some(effect) = on_hit {
-                self.apply_on_hit_effect(&effect, attacker_id, target_id, result.damage, &attacker_name, &target_name);
+                self.apply_on_hit_effect(
+                    &effect,
+                    attacker_id,
+                    target_id,
+                    result.damage,
+                    &attacker_name,
+                    &target_name,
+                );
             }
 
             // Activate passive enemies when they take damage
@@ -689,7 +742,10 @@ impl World {
         target_name: &str,
     ) {
         match effect {
-            OnHitEffect::Poison { damage: dmg, duration } => {
+            OnHitEffect::Poison {
+                damage: dmg,
+                duration,
+            } => {
                 if let Some(target) = self.get_entity_mut(target_id) {
                     target.status_effects.push(StatusEffect {
                         effect_type: StatusType::Poison,
@@ -703,7 +759,10 @@ impl World {
                     LogSeverity::Danger,
                 );
             }
-            OnHitEffect::Burn { damage: dmg, duration } => {
+            OnHitEffect::Burn {
+                damage: dmg,
+                duration,
+            } => {
                 if let Some(target) = self.get_entity_mut(target_id) {
                     target.status_effects.push(StatusEffect {
                         effect_type: StatusType::Burning,
@@ -717,7 +776,10 @@ impl World {
                     LogSeverity::Danger,
                 );
             }
-            OnHitEffect::Slow { magnitude: _, duration } => {
+            OnHitEffect::Slow {
+                magnitude: _,
+                duration,
+            } => {
                 if let Some(target) = self.get_entity_mut(target_id) {
                     target.status_effects.push(StatusEffect {
                         effect_type: StatusType::Slowed,
@@ -787,7 +849,10 @@ impl World {
 
         // Ally death: no XP/gold, just a message
         if is_ally {
-            self.push_message(&format!("Your ally {} falls!", entity_name), LogSeverity::Danger);
+            self.push_message(
+                &format!("Your ally {} falls!", entity_name),
+                LogSeverity::Danger,
+            );
             self.remove_entity(entity_id);
             return events;
         }
@@ -816,7 +881,9 @@ impl World {
             // Elite enemies have a 50% chance to drop an extra item
             if is_elite && self.rng.gen::<f32>() < 0.50 {
                 let all_item_templates = crate::engine::items::all_items();
-                if let Some(mut item) = placement::pick_weighted_item(self.floor, &mut self.rng, &all_item_templates) {
+                if let Some(mut item) =
+                    placement::pick_weighted_item(self.floor, &mut self.rng, &all_item_templates)
+                {
                     item.position = entity_pos;
                     self.push_message(
                         &format!("The {} drops a {}!", entity_name, item.name),
@@ -838,18 +905,22 @@ impl World {
                 );
 
                 // Check victory condition (floor 10 boss, or floor 20 for Marathon)
-                let victory_floor = if self.modifiers.contains(&RunModifier::Marathon) { 20 } else { 10 };
+                let victory_floor = if self.modifiers.contains(&RunModifier::Marathon) {
+                    20
+                } else {
+                    10
+                };
                 if self.floor == victory_floor {
                     self.victory = true;
                     self.game_over = true;
                     events.push(GameEvent::Victory);
-                    self.push_message("Victory! You have conquered the dungeon!", LogSeverity::Good);
+                    self.push_message(
+                        "Victory! You have conquered the dungeon!",
+                        LogSeverity::Good,
+                    );
                 }
             } else {
-                self.push_message(
-                    &format!("{} is defeated.", entity_name),
-                    LogSeverity::Good,
-                );
+                self.push_message(&format!("{} is defeated.", entity_name), LogSeverity::Good);
             }
 
             // Check level up
@@ -928,7 +999,11 @@ impl World {
                 // Check if stunned
                 let is_stunned = self
                     .get_entity(id)
-                    .map(|e| e.status_effects.iter().any(|s| s.effect_type == StatusType::Stunned))
+                    .map(|e| {
+                        e.status_effects
+                            .iter()
+                            .any(|s| s.effect_type == StatusType::Stunned)
+                    })
                     .unwrap_or(false);
 
                 if is_stunned {
@@ -963,8 +1038,8 @@ impl World {
 
         // Boss summon check: Goblin King has a timed summon mechanic driven by
         // the boss_action_counter, independent of the AI decision.
-        let is_goblin_king = entity.name == "Goblin King"
-            && matches!(&entity.ai, Some(AIBehavior::Boss(_)));
+        let is_goblin_king =
+            entity.name == "Goblin King" && matches!(&entity.ai, Some(AIBehavior::Boss(_)));
         if is_goblin_king {
             let is_phase2 = matches!(&entity.ai, Some(AIBehavior::Boss(BossPhase::Phase2)));
             let counter = self.boss_action_counter.entry(entity_id).or_insert(0);
@@ -1027,7 +1102,11 @@ impl World {
 
         let boss_pos = boss.position;
         let count = self.rng.gen_range(1..=2u32);
-        let summon_name = if summon_archers { "Goblin Archer" } else { "Goblin" };
+        let summon_name = if summon_archers {
+            "Goblin Archer"
+        } else {
+            "Goblin"
+        };
 
         let all_templates = enemies::all_enemies();
         let template = match all_templates.iter().find(|t| t.name == summon_name) {
@@ -1088,11 +1167,7 @@ impl World {
         }
 
         if !summoned_names.is_empty() {
-            let msg = format!(
-                "{} summons {}!",
-                boss.name,
-                summoned_names.join(" and ")
-            );
+            let msg = format!("{} summons {}!", boss.name, summoned_names.join(" and "));
             self.push_message(&msg, LogSeverity::Danger);
 
             events.push(GameEvent::BossSummon {
@@ -1123,7 +1198,8 @@ impl World {
         let player_pos = player.position;
 
         // Find an unblocked tile adjacent to the player to charge to
-        let charge_target = Direction::ALL.iter()
+        let charge_target = Direction::ALL
+            .iter()
             .map(|d| player_pos.apply_direction(*d))
             .find(|pos| {
                 self.map.in_bounds(pos.x, pos.y)
@@ -1149,7 +1225,8 @@ impl World {
             });
 
             // Attack with 2x damage: temporarily boost attack, perform attack, restore
-            let original_attack = self.get_entity(boss_id)
+            let original_attack = self
+                .get_entity(boss_id)
                 .and_then(|e| e.combat.as_ref())
                 .map(|c| c.base_attack)
                 .unwrap_or(0);
@@ -1171,8 +1248,13 @@ impl World {
 
             // Phase 2: stun the player for 1 turn
             if stun {
-                let already_stunned = self.get_entity(self.player_id)
-                    .map(|p| p.status_effects.iter().any(|s| s.effect_type == StatusType::Stunned))
+                let already_stunned = self
+                    .get_entity(self.player_id)
+                    .map(|p| {
+                        p.status_effects
+                            .iter()
+                            .any(|s| s.effect_type == StatusType::Stunned)
+                    })
                     .unwrap_or(false);
 
                 if !already_stunned {
@@ -1239,8 +1321,13 @@ impl World {
             // (i.e., the player was next to the Lich and stepped into the fire zone)
             let player_distance_to_old = player_pos.chebyshev_distance(&old_pos);
             if player_distance_to_old <= 1 {
-                let already_burning = self.get_entity(self.player_id)
-                    .map(|p| p.status_effects.iter().any(|s| s.effect_type == StatusType::Burning))
+                let already_burning = self
+                    .get_entity(self.player_id)
+                    .map(|p| {
+                        p.status_effects
+                            .iter()
+                            .any(|s| s.effect_type == StatusType::Burning)
+                    })
                     .unwrap_or(false);
 
                 if !already_burning {
@@ -1296,7 +1383,9 @@ impl World {
         }
 
         // Calculate frost bolt damage (base_attack * 0.8)
-        let damage = boss.combat.as_ref()
+        let damage = boss
+            .combat
+            .as_ref()
             .map(|c| (c.base_attack as f32 * 0.8) as i32)
             .unwrap_or(5)
             .max(3);
@@ -1310,7 +1399,10 @@ impl World {
 
         self.last_damage_source = Some("Struck by the Lich's frost bolt".to_string());
         self.push_message(
-            &format!("{} hurls a frost bolt at you for {} damage!", boss.name, damage),
+            &format!(
+                "{} hurls a frost bolt at you for {} damage!",
+                boss.name, damage
+            ),
             LogSeverity::Danger,
         );
 
@@ -1327,8 +1419,13 @@ impl World {
         });
 
         // Apply Slowed status
-        let already_slowed = self.get_entity(self.player_id)
-            .map(|p| p.status_effects.iter().any(|s| s.effect_type == StatusType::Slowed))
+        let already_slowed = self
+            .get_entity(self.player_id)
+            .map(|p| {
+                p.status_effects
+                    .iter()
+                    .any(|s| s.effect_type == StatusType::Slowed)
+            })
             .unwrap_or(false);
 
         if !already_slowed {
@@ -1340,7 +1437,10 @@ impl World {
                     source: "Lich's frost bolt".to_string(),
                 });
             }
-            self.push_message("The frost chills your bones, slowing you!", LogSeverity::Warning);
+            self.push_message(
+                "The frost chills your bones, slowing you!",
+                LogSeverity::Warning,
+            );
             events.push(GameEvent::StatusApplied {
                 entity_id: self.player_id,
                 effect: StatusType::Slowed,
@@ -1362,7 +1462,8 @@ impl World {
                 let pos = Position::new(center.x + dx, center.y + dy);
                 if self.map.in_bounds(pos.x, pos.y)
                     && self.map.is_walkable(pos.x, pos.y)
-                    && !self.is_blocked(pos, 0) // 0 won't match any entity
+                    && !self.is_blocked(pos, 0)
+                // 0 won't match any entity
                 {
                     candidates.push(pos);
                 }
@@ -1465,8 +1566,14 @@ impl World {
         };
 
         let directions = [
-            Direction::N, Direction::S, Direction::E, Direction::W,
-            Direction::NE, Direction::NW, Direction::SE, Direction::SW,
+            Direction::N,
+            Direction::S,
+            Direction::E,
+            Direction::W,
+            Direction::NE,
+            Direction::NW,
+            Direction::SE,
+            Direction::SW,
         ];
         let dir = directions[self.rng.gen_range(0..directions.len())];
         let new_pos = entity_pos.apply_direction(dir);
@@ -1509,7 +1616,10 @@ impl World {
                                 health.current -= damage;
                             }
                         }
-                        let name = self.get_entity(id).map(|e| e.name.clone()).unwrap_or_default();
+                        let name = self
+                            .get_entity(id)
+                            .map(|e| e.name.clone())
+                            .unwrap_or_default();
                         events.push(GameEvent::DamageTaken {
                             entity_id: id,
                             amount: damage,
@@ -1530,7 +1640,10 @@ impl World {
                                 health.current -= damage;
                             }
                         }
-                        let name = self.get_entity(id).map(|e| e.name.clone()).unwrap_or_default();
+                        let name = self
+                            .get_entity(id)
+                            .map(|e| e.name.clone())
+                            .unwrap_or_default();
                         events.push(GameEvent::DamageTaken {
                             entity_id: id,
                             amount: damage,
@@ -1694,8 +1807,14 @@ impl World {
             .map(|f| f.visible_tiles.clone())
             .unwrap_or_default();
 
-        let newly_spotted: Vec<(EntityId, String)> = self.entities.iter()
-            .filter(|e| e.ai.is_some() && visible.contains(&e.position) && !self.spotted_enemies.contains(&e.id))
+        let newly_spotted: Vec<(EntityId, String)> = self
+            .entities
+            .iter()
+            .filter(|e| {
+                e.ai.is_some()
+                    && visible.contains(&e.position)
+                    && !self.spotted_enemies.contains(&e.id)
+            })
             .map(|e| (e.id, e.name.clone()))
             .collect();
 
@@ -1714,10 +1833,11 @@ impl World {
         let mut events = Vec::new();
 
         // Find trap at position
-        let trap_id = self.entities.iter().find(|e| {
-            e.position == pos && e.trap.is_some()
-                && !e.trap.as_ref().unwrap().triggered
-        }).map(|e| e.id);
+        let trap_id = self
+            .entities
+            .iter()
+            .find(|e| e.position == pos && e.trap.is_some() && !e.trap.as_ref().unwrap().triggered)
+            .map(|e| e.id);
 
         let trap_id = match trap_id {
             Some(id) => id,
@@ -1786,7 +1906,10 @@ impl World {
                 // Teleport to random floor tile
                 let floor_tiles: Vec<Position> = (0..self.map.width as i32)
                     .flat_map(|x| (0..self.map.height as i32).map(move |y| Position::new(x, y)))
-                    .filter(|p| self.map.get_tile(p.x, p.y) == TileType::Floor && !self.is_blocked(*p, entity_id))
+                    .filter(|p| {
+                        self.map.get_tile(p.x, p.y) == TileType::Floor
+                            && !self.is_blocked(*p, entity_id)
+                    })
                     .collect();
 
                 if floor_tiles.is_empty() {
@@ -1832,7 +1955,10 @@ impl World {
 
         if door_state.locked {
             // Check if player has the right key
-            let key_name = door_state.key_id.clone().unwrap_or_else(|| "Boss Key".to_string());
+            let key_name = door_state
+                .key_id
+                .clone()
+                .unwrap_or_else(|| "Boss Key".to_string());
             let has_key = self.player_has_item(&key_name);
 
             if has_key {
@@ -1869,9 +1995,11 @@ impl World {
         let player_pos = self.get_entity(self.player_id).unwrap().position;
 
         // Find item at player position
-        let item_id = self.entities.iter().find(|e| {
-            e.position == player_pos && e.item.is_some() && e.id != self.player_id
-        }).map(|e| e.id);
+        let item_id = self
+            .entities
+            .iter()
+            .find(|e| e.position == player_pos && e.item.is_some() && e.id != self.player_id)
+            .map(|e| e.id);
 
         let item_id = match item_id {
             Some(id) => id,
@@ -1901,9 +2029,7 @@ impl World {
                 &format!("You pick up the {}.", item.name),
                 LogSeverity::Good,
             );
-            events.push(GameEvent::ItemPickedUp {
-                item: item_view,
-            });
+            events.push(GameEvent::ItemPickedUp { item: item_view });
 
             if let Some(player) = self.get_entity_mut(self.player_id) {
                 if let Some(ref mut inv) = player.inventory {
@@ -1920,9 +2046,10 @@ impl World {
 
         let player_pos = self.get_entity(self.player_id).unwrap().position;
 
-        let stair = self.entities.iter().find(|e| {
-            e.position == player_pos && e.stair == Some(StairDirection::Down)
-        });
+        let stair = self
+            .entities
+            .iter()
+            .find(|e| e.position == player_pos && e.stair == Some(StairDirection::Down));
 
         if stair.is_none() {
             self.push_message("There are no stairs here.", LogSeverity::Info);
@@ -2020,7 +2147,10 @@ impl World {
         };
 
         if !item_props.item_type.is_consumable() && item_props.item_type != ItemType::Wand {
-            self.push_message("You can't use that item directly. Try equipping it.", LogSeverity::Info);
+            self.push_message(
+                "You can't use that item directly. Try equipping it.",
+                LogSeverity::Info,
+            );
             return events;
         }
 
@@ -2041,7 +2171,10 @@ impl World {
                     }
                 }
                 effect_desc = format!("healed {} HP", amount);
-                self.push_message(&format!("You drink the {}. Healed {} HP.", item.name, amount), LogSeverity::Good);
+                self.push_message(
+                    &format!("You drink the {}. Healed {} HP.", item.name, amount),
+                    LogSeverity::Good,
+                );
             }
             Some(ItemEffect::RevealMap) => {
                 self.map.reveal_all();
@@ -2060,16 +2193,29 @@ impl World {
                 }
                 if count > 0 {
                     effect_desc = "revealed hidden passages".to_string();
-                    self.push_message(&format!("You sense {} hidden passage{}!", count, if count > 1 { "s" } else { "" }), LogSeverity::Good);
+                    self.push_message(
+                        &format!(
+                            "You sense {} hidden passage{}!",
+                            count,
+                            if count > 1 { "s" } else { "" }
+                        ),
+                        LogSeverity::Good,
+                    );
                 } else {
                     effect_desc = "found nothing hidden".to_string();
-                    self.push_message("You sense no hidden passages on this floor.", LogSeverity::Info);
+                    self.push_message(
+                        "You sense no hidden passages on this floor.",
+                        LogSeverity::Info,
+                    );
                 }
             }
             Some(ItemEffect::Teleport) => {
                 let floor_tiles: Vec<Position> = (0..self.map.width as i32)
                     .flat_map(|x| (0..self.map.height as i32).map(move |y| Position::new(x, y)))
-                    .filter(|p| self.map.get_tile(p.x, p.y) == TileType::Floor && !self.is_blocked(*p, self.player_id))
+                    .filter(|p| {
+                        self.map.get_tile(p.x, p.y) == TileType::Floor
+                            && !self.is_blocked(*p, self.player_id)
+                    })
                     .collect();
 
                 if floor_tiles.is_empty() {
@@ -2091,7 +2237,9 @@ impl World {
             }
             Some(ItemEffect::CureStatus) => {
                 if let Some(player) = self.get_entity_mut(self.player_id) {
-                    player.status_effects.retain(|s| !s.effect_type.is_negative());
+                    player
+                        .status_effects
+                        .retain(|s| !s.effect_type.is_negative());
                 }
                 effect_desc = "cured status effects".to_string();
                 self.push_message("Your ailments are cured!", LogSeverity::Good);
@@ -2115,15 +2263,22 @@ impl World {
                     duration,
                 });
                 effect_desc = format!("applied {:?}", effect);
-                self.push_message(&format!("You feel the effects of the {}.", item.name), LogSeverity::Info);
+                self.push_message(
+                    &format!("You feel the effects of the {}.", item.name),
+                    LogSeverity::Info,
+                );
             }
             Some(ItemEffect::DamageArea { damage, radius }) => {
                 let damage = *damage + self.spell_power_bonus;
                 let radius = *radius;
                 let player_pos = self.get_entity(self.player_id).unwrap().position;
 
-                let targets: Vec<EntityId> = self.entities.iter()
-                    .filter(|e| e.ai.is_some() && e.position.chebyshev_distance(&player_pos) <= radius)
+                let targets: Vec<EntityId> = self
+                    .entities
+                    .iter()
+                    .filter(|e| {
+                        e.ai.is_some() && e.position.chebyshev_distance(&player_pos) <= radius
+                    })
                     .map(|e| e.id)
                     .collect();
 
@@ -2140,7 +2295,8 @@ impl World {
                     });
 
                     // Check death
-                    let dead = self.get_entity(target_id)
+                    let dead = self
+                        .get_entity(target_id)
                         .and_then(|e| e.health.as_ref())
                         .map(|h| h.is_dead())
                         .unwrap_or(false);
@@ -2150,7 +2306,10 @@ impl World {
                 }
 
                 effect_desc = format!("dealt {} damage in radius {}", damage, radius);
-                self.push_message(&format!("A fireball explodes! {} damage!", damage), LogSeverity::Danger);
+                self.push_message(
+                    &format!("A fireball explodes! {} damage!", damage),
+                    LogSeverity::Danger,
+                );
             }
             Some(ItemEffect::RangedAttack { damage, status }) => {
                 // For wands, check charges
@@ -2164,12 +2323,15 @@ impl World {
 
                 // Find nearest visible enemy
                 let player_pos = self.get_entity(self.player_id).unwrap().position;
-                let player_fov = self.get_entity(self.player_id)
+                let player_fov = self
+                    .get_entity(self.player_id)
                     .and_then(|e| e.fov.as_ref())
                     .map(|f| f.visible_tiles.clone())
                     .unwrap_or_default();
 
-                let nearest_enemy = self.entities.iter()
+                let nearest_enemy = self
+                    .entities
+                    .iter()
                     .filter(|e| e.ai.is_some() && player_fov.contains(&e.position))
                     .min_by_key(|e| e.position.chebyshev_distance(&player_pos))
                     .map(|e| e.id);
@@ -2181,13 +2343,22 @@ impl World {
                             health.current -= damage;
                         }
                     }
-                    let target_name = self.get_entity(target_id).map(|e| e.name.clone()).unwrap_or_default();
+                    let target_name = self
+                        .get_entity(target_id)
+                        .map(|e| e.name.clone())
+                        .unwrap_or_default();
                     events.push(GameEvent::DamageTaken {
                         entity_id: target_id,
                         amount: damage,
                         source: item.name.clone(),
                     });
-                    self.push_message(&format!("The {} zaps {} for {} damage!", item.name, target_name, damage), LogSeverity::Info);
+                    self.push_message(
+                        &format!(
+                            "The {} zaps {} for {} damage!",
+                            item.name, target_name, damage
+                        ),
+                        LogSeverity::Info,
+                    );
 
                     // Apply status if applicable
                     if let Some((status_type, duration)) = status {
@@ -2201,7 +2372,8 @@ impl World {
                         }
                     }
 
-                    let dead = self.get_entity(target_id)
+                    let dead = self
+                        .get_entity(target_id)
                         .and_then(|e| e.health.as_ref())
                         .map(|h| h.is_dead())
                         .unwrap_or(false);
@@ -2245,7 +2417,10 @@ impl World {
             self.hunger = (self.hunger + item_props.hunger_restore).min(self.max_hunger);
             let restored = self.hunger - old_hunger;
             if restored > 0 {
-                self.push_message(&format!("You feel satiated. (+{} fullness)", restored), LogSeverity::Good);
+                self.push_message(
+                    &format!("You feel satiated. (+{} fullness)", restored),
+                    LogSeverity::Good,
+                );
                 events.push(GameEvent::HungerChanged { level: self.hunger });
             }
         }
@@ -2304,9 +2479,16 @@ impl World {
         let is_equipped = {
             let player = self.get_entity(self.player_id).unwrap();
             if let Some(equip) = &player.equipment {
-                [equip.main_hand, equip.off_hand, equip.head, equip.body, equip.ring, equip.amulet]
-                    .iter()
-                    .any(|slot| *slot == Some(item.id))
+                [
+                    equip.main_hand,
+                    equip.off_hand,
+                    equip.head,
+                    equip.body,
+                    equip.ring,
+                    equip.amulet,
+                ]
+                .iter()
+                .any(|slot| *slot == Some(item.id))
             } else {
                 false
             }
@@ -2393,7 +2575,10 @@ impl World {
                 .and_then(|inv| inv.items.iter().find(|i| i.id == prev_id))
                 .map(|i| i.name.clone())
                 .unwrap_or_else(|| "item".to_string());
-            self.push_message(&format!("You unequip the {}.", prev_name), LogSeverity::Info);
+            self.push_message(
+                &format!("You unequip the {}.", prev_name),
+                LogSeverity::Info,
+            );
         }
 
         // Equip the new item
@@ -2403,10 +2588,7 @@ impl World {
             }
         }
 
-        self.push_message(
-            &format!("You equip the {}.", item.name),
-            LogSeverity::Good,
-        );
+        self.push_message(&format!("You equip the {}.", item.name), LogSeverity::Good);
         events.push(GameEvent::ItemEquipped {
             item: item_view,
             slot,
@@ -2522,18 +2704,24 @@ impl World {
             return false;
         }
         // Check for blocking entities
-        !self.entities.iter().any(|e| e.position == pos && e.blocks_movement && e.id != self.player_id)
+        !self
+            .entities
+            .iter()
+            .any(|e| e.position == pos && e.blocks_movement && e.id != self.player_id)
     }
 
     fn is_blocked(&self, pos: Position, self_id: EntityId) -> bool {
         if !self.map.in_bounds(pos.x, pos.y) || !self.map.is_walkable(pos.x, pos.y) {
             return true;
         }
-        self.entities.iter().any(|e| e.position == pos && e.blocks_movement && e.id != self_id)
+        self.entities
+            .iter()
+            .any(|e| e.position == pos && e.blocks_movement && e.id != self_id)
     }
 
     fn hostile_entity_at(&self, pos: Position) -> Option<EntityId> {
-        self.entities.iter()
+        self.entities
+            .iter()
             .find(|e| {
                 e.position == pos
                     && e.ai.is_some()
@@ -2544,13 +2732,15 @@ impl World {
     }
 
     fn shop_entity_at(&self, pos: Position) -> Option<EntityId> {
-        self.entities.iter()
+        self.entities
+            .iter()
             .find(|e| e.position == pos && e.shop.is_some())
             .map(|e| e.id)
     }
 
     fn door_at(&self, pos: Position) -> Option<EntityId> {
-        self.entities.iter()
+        self.entities
+            .iter()
             .find(|e| e.position == pos && e.door.is_some() && !e.door.as_ref().unwrap().open)
             .map(|e| e.id)
     }
@@ -2626,7 +2816,8 @@ impl World {
             }
 
             // Resolve attack
-            let result = combat::resolve_ranged_attack(&player, &target, damage_bonus, &mut self.rng);
+            let result =
+                combat::resolve_ranged_attack(&player, &target, damage_bonus, &mut self.rng);
 
             events.push(GameEvent::ProjectileFired {
                 from: player_pos,
@@ -2644,11 +2835,24 @@ impl World {
             self.last_damage_source = None; // Player is attacking, not being attacked
 
             let msg = if result.is_crit {
-                format!("Throwing knife critically hits {} for {} damage!", target.name, result.damage)
+                format!(
+                    "Throwing knife critically hits {} for {} damage!",
+                    target.name, result.damage
+                )
             } else {
-                format!("Throwing knife hits {} for {} damage.", target.name, result.damage)
+                format!(
+                    "Throwing knife hits {} for {} damage.",
+                    target.name, result.damage
+                )
             };
-            self.push_message(&msg, if result.is_crit { LogSeverity::Danger } else { LogSeverity::Info });
+            self.push_message(
+                &msg,
+                if result.is_crit {
+                    LogSeverity::Danger
+                } else {
+                    LogSeverity::Info
+                },
+            );
 
             events.push(GameEvent::Attacked {
                 attacker_id: self.player_id,
@@ -2728,7 +2932,10 @@ impl World {
                         AmmoType::Bolt => "bolts",
                         AmmoType::ThrowingKnife => "throwing knives",
                     };
-                    self.push_message(&format!("No {} remaining.", ammo_name), LogSeverity::Warning);
+                    self.push_message(
+                        &format!("No {} remaining.", ammo_name),
+                        LogSeverity::Warning,
+                    );
                     return events;
                 }
             }
@@ -2752,9 +2959,13 @@ impl World {
             }
         }
 
-        let weapon_name = player.inventory.as_ref()
+        let weapon_name = player
+            .inventory
+            .as_ref()
             .and_then(|inv| {
-                player.equipment.as_ref()
+                player
+                    .equipment
+                    .as_ref()
                     .and_then(|eq| eq.main_hand)
                     .and_then(|wid| inv.items.iter().find(|i| i.id == wid))
             })
@@ -2762,11 +2973,24 @@ impl World {
             .unwrap_or_else(|| "ranged weapon".to_string());
 
         let msg = if result.is_crit {
-            format!("{} critically hits {} for {} damage!", weapon_name, target.name, result.damage)
+            format!(
+                "{} critically hits {} for {} damage!",
+                weapon_name, target.name, result.damage
+            )
         } else {
-            format!("{} hits {} for {} damage.", weapon_name, target.name, result.damage)
+            format!(
+                "{} hits {} for {} damage.",
+                weapon_name, target.name, result.damage
+            )
         };
-        self.push_message(&msg, if result.is_crit { LogSeverity::Danger } else { LogSeverity::Info });
+        self.push_message(
+            &msg,
+            if result.is_crit {
+                LogSeverity::Danger
+            } else {
+                LogSeverity::Info
+            },
+        );
 
         events.push(GameEvent::Attacked {
             attacker_id: self.player_id,
@@ -2835,14 +3059,18 @@ impl World {
         // Check gold
         if self.gold < shop_item.price {
             self.push_message(
-                &format!("Not enough gold! Need {} but have {}.", shop_item.price, self.gold),
+                &format!(
+                    "Not enough gold! Need {} but have {}.",
+                    shop_item.price, self.gold
+                ),
                 LogSeverity::Warning,
             );
             return events;
         }
 
         // Check inventory space
-        let inv_full = self.get_entity(self.player_id)
+        let inv_full = self
+            .get_entity(self.player_id)
             .and_then(|p| p.inventory.as_ref())
             .map(|inv| inv.items.len() >= inv.max_size as usize)
             .unwrap_or(true);
@@ -2931,13 +3159,18 @@ impl World {
         let mut events = Vec::new();
 
         // Validate shop exists
-        if self.get_entity(shop_id).and_then(|e| e.shop.as_ref()).is_none() {
+        if self
+            .get_entity(shop_id)
+            .and_then(|e| e.shop.as_ref())
+            .is_none()
+        {
             self.push_message("That's not a shop.", LogSeverity::Warning);
             return events;
         }
 
         // Get item from player inventory
-        let item_info = self.get_entity(self.player_id)
+        let item_info = self
+            .get_entity(self.player_id)
             .and_then(|p| p.inventory.as_ref())
             .and_then(|inv| inv.items.get(item_index))
             .map(|item| (item.name.clone(), item.id));
@@ -2951,7 +3184,8 @@ impl World {
         };
 
         // Check item isn't equipped
-        let is_equipped = self.get_entity(self.player_id)
+        let is_equipped = self
+            .get_entity(self.player_id)
             .and_then(|p| p.equipment.as_ref())
             .map(|e| {
                 [e.main_hand, e.off_hand, e.head, e.body, e.ring, e.amulet]
@@ -2994,7 +3228,11 @@ impl World {
         // Find adjacent interactive entity (check all 8 directions + current tile)
         let mut interactive_id: Option<EntityId> = None;
         let check_positions: Vec<Position> = std::iter::once(player_pos)
-            .chain(Direction::ALL.iter().map(|d| player_pos.apply_direction(*d)))
+            .chain(
+                Direction::ALL
+                    .iter()
+                    .map(|d| player_pos.apply_direction(*d)),
+            )
             .collect();
 
         for pos in &check_positions {
@@ -3052,7 +3290,9 @@ impl World {
                         .iter()
                         .filter(|t| t.min_floor <= self.floor && t.item_type != ItemType::Key)
                         .collect();
-                    if let Some(template) = eligible.get(self.rng.gen_range(0..eligible.len().max(1))) {
+                    if let Some(template) =
+                        eligible.get(self.rng.gen_range(0..eligible.len().max(1)))
+                    {
                         let item_entity = Entity {
                             id: placement::next_id(),
                             name: template.name.to_string(),
@@ -3100,8 +3340,12 @@ impl World {
                     self.push_message("The barrel explodes!", LogSeverity::Danger);
                     let damage = 3;
                     // Damage entities in radius 1 of barrel position
-                    let nearby: Vec<EntityId> = self.entities.iter()
-                        .filter(|e| e.health.is_some() && e.position.chebyshev_distance(&entity_pos) <= 1)
+                    let nearby: Vec<EntityId> = self
+                        .entities
+                        .iter()
+                        .filter(|e| {
+                            e.health.is_some() && e.position.chebyshev_distance(&entity_pos) <= 1
+                        })
                         .map(|e| e.id)
                         .collect();
                     for target_id in nearby {
@@ -3143,8 +3387,12 @@ impl World {
 
                 // Toggle doors in the same room
                 let mut toggled = 0;
-                let door_ids: Vec<EntityId> = self.entities.iter()
-                    .filter(|e| e.door.is_some() && e.position.chebyshev_distance(&entity_pos) <= 10)
+                let door_ids: Vec<EntityId> = self
+                    .entities
+                    .iter()
+                    .filter(|e| {
+                        e.door.is_some() && e.position.chebyshev_distance(&entity_pos) <= 10
+                    })
                     .map(|e| e.id)
                     .collect();
                 for door_id in &door_ids {
@@ -3165,7 +3413,9 @@ impl World {
                     format!("You pull the lever back. {} door(s) close.", toggled)
                 };
                 self.push_message(&msg, LogSeverity::Info);
-                events.push(GameEvent::LeverPulled { position: entity_pos });
+                events.push(GameEvent::LeverPulled {
+                    position: entity_pos,
+                });
             }
 
             InteractionType::Fountain => {
@@ -3186,7 +3436,10 @@ impl World {
                         }
                     }
                     effect_name = "healing".to_string();
-                    self.push_message("The fountain's water heals your wounds. (+20 HP)", LogSeverity::Good);
+                    self.push_message(
+                        "The fountain's water heals your wounds. (+20 HP)",
+                        LogSeverity::Good,
+                    );
                     events.push(GameEvent::Healed {
                         entity_id: self.player_id,
                         amount: 20,
@@ -3197,7 +3450,10 @@ impl World {
                         player.status_effects.clear();
                     }
                     effect_name = "purification".to_string();
-                    self.push_message("The fountain's water purifies your body. Status effects cleared.", LogSeverity::Good);
+                    self.push_message(
+                        "The fountain's water purifies your body. Status effects cleared.",
+                        LogSeverity::Good,
+                    );
                 } else if roll < 0.80 {
                     // +1 permanent random stat
                     let stat_roll = self.rng.gen_range(0..3);
@@ -3207,17 +3463,26 @@ impl World {
                                 0 => {
                                     c.base_attack += 1;
                                     effect_name = "strength".to_string();
-                                    self.push_message("The fountain's water empowers you. (+1 Attack)", LogSeverity::Good);
+                                    self.push_message(
+                                        "The fountain's water empowers you. (+1 Attack)",
+                                        LogSeverity::Good,
+                                    );
                                 }
                                 1 => {
                                     c.base_defense += 1;
                                     effect_name = "resilience".to_string();
-                                    self.push_message("The fountain's water toughens your skin. (+1 Defense)", LogSeverity::Good);
+                                    self.push_message(
+                                        "The fountain's water toughens your skin. (+1 Defense)",
+                                        LogSeverity::Good,
+                                    );
                                 }
                                 _ => {
                                     c.base_speed += 10;
                                     effect_name = "swiftness".to_string();
-                                    self.push_message("The fountain's water quickens your step. (+10 Speed)", LogSeverity::Good);
+                                    self.push_message(
+                                        "The fountain's water quickens your step. (+10 Speed)",
+                                        LogSeverity::Good,
+                                    );
                                 }
                             }
                         } else {
@@ -3237,7 +3502,10 @@ impl World {
                         });
                     }
                     effect_name = "poison".to_string();
-                    self.push_message("The fountain's water burns! You are poisoned!", LogSeverity::Danger);
+                    self.push_message(
+                        "The fountain's water burns! You are poisoned!",
+                        LogSeverity::Danger,
+                    );
                     events.push(GameEvent::StatusApplied {
                         entity_id: self.player_id,
                         effect: StatusType::Poison,
@@ -3315,9 +3583,16 @@ impl World {
 
                 if trapped {
                     // Poison gas: apply Poison to entities in radius 2
-                    self.push_message("A cloud of poison gas erupts from the chest!", LogSeverity::Danger);
-                    let nearby: Vec<EntityId> = self.entities.iter()
-                        .filter(|e| e.health.is_some() && e.position.chebyshev_distance(&entity_pos) <= 2)
+                    self.push_message(
+                        "A cloud of poison gas erupts from the chest!",
+                        LogSeverity::Danger,
+                    );
+                    let nearby: Vec<EntityId> = self
+                        .entities
+                        .iter()
+                        .filter(|e| {
+                            e.health.is_some() && e.position.chebyshev_distance(&entity_pos) <= 2
+                        })
                         .map(|e| e.id)
                         .collect();
                     for target_id in nearby {
@@ -3360,25 +3635,33 @@ impl World {
                     let equipped_ids: Vec<EntityId> = player
                         .and_then(|p| p.equipment.as_ref())
                         .map(|eq| {
-                            [eq.main_hand, eq.off_hand, eq.head, eq.body, eq.ring, eq.amulet]
-                                .iter()
-                                .filter_map(|s| *s)
-                                .collect()
+                            [
+                                eq.main_hand,
+                                eq.off_hand,
+                                eq.head,
+                                eq.body,
+                                eq.ring,
+                                eq.amulet,
+                            ]
+                            .iter()
+                            .filter_map(|s| *s)
+                            .collect()
                         })
                         .unwrap_or_default();
 
                     player
                         .and_then(|p| p.inventory.as_ref())
-                        .and_then(|inv| {
-                            inv.items.iter().find(|i| !equipped_ids.contains(&i.id))
-                        })
+                        .and_then(|inv| inv.items.iter().find(|i| !equipped_ids.contains(&i.id)))
                         .map(|i| (i.id, i.name.clone()))
                 };
 
                 let (item_id, item_name) = match item_info {
                     Some(info) => info,
                     None => {
-                        self.push_message("You have nothing to offer the altar.", LogSeverity::Info);
+                        self.push_message(
+                            "You have nothing to offer the altar.",
+                            LogSeverity::Info,
+                        );
                         return events;
                     }
                 };
@@ -3433,7 +3716,10 @@ impl World {
                 }
 
                 self.push_message(
-                    &format!("You offer the {} to the altar. You feel empowered! ({})", item_name, stat_name),
+                    &format!(
+                        "You offer the {} to the altar. You feel empowered! ({})",
+                        item_name, stat_name
+                    ),
                     LogSeverity::Good,
                 );
                 events.push(GameEvent::AltarOffering {
@@ -3470,7 +3756,7 @@ impl World {
             // Check if this tile is adjacent to an unrevealed tile
             let idx = self.map.idx(pos.x, pos.y);
             if self.map.revealed[idx] && self.map.tiles[idx].is_walkable() {
-                for (dx, dy) in &[(-1i32,0),(1,0),(0,-1),(0,1)] {
+                for (dx, dy) in &[(-1i32, 0), (1, 0), (0, -1), (0, 1)] {
                     let nx = pos.x + dx;
                     let ny = pos.y + dy;
                     if self.map.in_bounds(nx, ny) {
@@ -3481,17 +3767,36 @@ impl World {
                         }
                     }
                 }
-                if target.is_some() { break; }
+                if target.is_some() {
+                    break;
+                }
             }
 
-            for (dx, dy) in &[(-1i32,0),(1,0),(0,-1),(0,1),(-1,-1),(-1,1),(1,-1),(1,1)] {
+            for (dx, dy) in &[
+                (-1i32, 0),
+                (1, 0),
+                (0, -1),
+                (0, 1),
+                (-1, -1),
+                (-1, 1),
+                (1, -1),
+                (1, 1),
+            ] {
                 let nx = pos.x + dx;
                 let ny = pos.y + dy;
-                if !self.map.in_bounds(nx, ny) { continue; }
+                if !self.map.in_bounds(nx, ny) {
+                    continue;
+                }
                 let nidx = self.map.idx(nx, ny);
-                if visited[nidx] { continue; }
-                if !self.map.tiles[nidx].is_walkable() { continue; }
-                if !self.map.revealed[nidx] { continue; }
+                if visited[nidx] {
+                    continue;
+                }
+                if !self.map.tiles[nidx].is_walkable() {
+                    continue;
+                }
+                if !self.map.revealed[nidx] {
+                    continue;
+                }
                 visited[nidx] = true;
                 came_from[nidx] = Some(pos);
                 queue.push_back(Position::new(nx, ny));
@@ -3549,9 +3854,10 @@ impl World {
             .map(|f| &f.visible_tiles);
 
         if let Some(vis) = visible {
-            let has_enemy = self.entities.iter().any(|e| {
-                e.ai.is_some() && e.health.is_some() && vis.contains(&e.position)
-            });
+            let has_enemy = self
+                .entities
+                .iter()
+                .any(|e| e.ai.is_some() && e.health.is_some() && vis.contains(&e.position));
             if has_enemy {
                 return Some(AutoExploreInterrupt::EnemySpotted);
             }
@@ -3568,17 +3874,19 @@ impl World {
 
         // Check for items at player position
         let player_pos = self.get_entity(self.player_id).unwrap().position;
-        let has_item = self.entities.iter().any(|e| {
-            e.position == player_pos && e.item.is_some() && e.id != self.player_id
-        });
+        let has_item = self
+            .entities
+            .iter()
+            .any(|e| e.position == player_pos && e.item.is_some() && e.id != self.player_id);
         if has_item {
             return Some(AutoExploreInterrupt::ItemFound);
         }
 
         // Check for stairs at player position
-        let on_stairs = self.entities.iter().any(|e| {
-            e.position == player_pos && e.stair == Some(StairDirection::Down)
-        });
+        let on_stairs = self
+            .entities
+            .iter()
+            .any(|e| e.position == player_pos && e.stair == Some(StairDirection::Down));
         if on_stairs {
             return Some(AutoExploreInterrupt::StairsReached);
         }
@@ -3594,7 +3902,11 @@ impl World {
             .map(|e| (e.id, e.position, e.fov.as_ref().unwrap().radius))
             .collect();
 
-        let abyss_reduction = if Biome::for_floor(self.floor) == Biome::Abyss { 3 } else { 0 };
+        let abyss_reduction = if Biome::for_floor(self.floor) == Biome::Abyss {
+            3
+        } else {
+            0
+        };
 
         for (id, pos, radius) in entity_ids {
             // Abyss biome reduces player FOV by 3
@@ -3641,7 +3953,10 @@ impl World {
     fn handle_player_death(&mut self, mut events: Vec<GameEvent>) -> TurnResult {
         self.game_over = true;
 
-        let cause = self.last_damage_source.clone().unwrap_or_else(|| "Slain in the dungeon".to_string());
+        let cause = self
+            .last_damage_source
+            .clone()
+            .unwrap_or_else(|| "Slain in the dungeon".to_string());
         events.push(GameEvent::PlayerDied {
             cause: cause.clone(),
         });
@@ -3702,7 +4017,9 @@ impl World {
         for y in 0..self.map.height as i32 {
             for x in 0..self.map.width as i32 {
                 let idx = self.map.idx(x, y);
-                let is_visible = player_fov.map(|fov| fov.contains(&Position::new(x, y))).unwrap_or(false);
+                let is_visible = player_fov
+                    .map(|fov| fov.contains(&Position::new(x, y)))
+                    .unwrap_or(false);
                 let is_explored = self.map.revealed[idx];
 
                 if is_visible || is_explored {
@@ -3723,7 +4040,9 @@ impl World {
             .iter()
             .filter(|e| {
                 e.id == self.player_id
-                    || player_fov.map(|fov| fov.contains(&e.position)).unwrap_or(false)
+                    || player_fov
+                        .map(|fov| fov.contains(&e.position))
+                        .unwrap_or(false)
             })
             .map(|e| entity_to_view(e))
             .collect();
@@ -3975,11 +4294,15 @@ fn entity_to_view(entity: &Entity) -> EntityView {
         glyph: entity.glyph,
         hp: entity.health.as_ref().map(|h| (h.current, h.max)),
         flavor_text: entity.flavor_text.clone(),
-        status_effects: entity.status_effects.iter().map(|s| StatusView {
-            effect_type: s.effect_type,
-            duration: s.duration,
-            magnitude: s.magnitude,
-        }).collect(),
+        status_effects: entity
+            .status_effects
+            .iter()
+            .map(|s| StatusView {
+                effect_type: s.effect_type,
+                duration: s.duration,
+                magnitude: s.magnitude,
+            })
+            .collect(),
         elite: entity.elite.as_ref().map(|e| format!("{:?}", e)),
         is_ally,
     }
@@ -4058,11 +4381,17 @@ mod tests {
                 assert_ne!(initial_pos, final_pos);
                 moved = true;
                 // Check that events include a Moved event
-                assert!(result.events.iter().any(|e| matches!(e, GameEvent::Moved { .. })));
+                assert!(result
+                    .events
+                    .iter()
+                    .any(|e| matches!(e, GameEvent::Moved { .. })));
                 break;
             }
         }
-        assert!(moved, "Player should be able to move in at least one direction");
+        assert!(
+            moved,
+            "Player should be able to move in at least one direction"
+        );
     }
 
     #[test]
@@ -4127,7 +4456,14 @@ mod tests {
         });
 
         // Check attack event
-        assert!(result.events.iter().any(|e| matches!(e, GameEvent::Attacked { attacker_id: 0, target_id: 999, .. })));
+        assert!(result.events.iter().any(|e| matches!(
+            e,
+            GameEvent::Attacked {
+                attacker_id: 0,
+                target_id: 999,
+                ..
+            }
+        )));
 
         // Enemy should have less HP
         let enemy = world.get_entity(999).unwrap();
@@ -4211,11 +4547,21 @@ mod tests {
     fn seed_determinism_same_actions() {
         // Same seed + same actions = identical state
         let actions = vec![
-            PlayerAction { action_type: PlayerActionType::Move(Direction::E) },
-            PlayerAction { action_type: PlayerActionType::Move(Direction::S) },
-            PlayerAction { action_type: PlayerActionType::Wait },
-            PlayerAction { action_type: PlayerActionType::Move(Direction::N) },
-            PlayerAction { action_type: PlayerActionType::Move(Direction::W) },
+            PlayerAction {
+                action_type: PlayerActionType::Move(Direction::E),
+            },
+            PlayerAction {
+                action_type: PlayerActionType::Move(Direction::S),
+            },
+            PlayerAction {
+                action_type: PlayerActionType::Wait,
+            },
+            PlayerAction {
+                action_type: PlayerActionType::Move(Direction::N),
+            },
+            PlayerAction {
+                action_type: PlayerActionType::Move(Direction::W),
+            },
         ];
 
         let mut world1 = World::new(12345);
@@ -4243,10 +4589,16 @@ mod tests {
         let world2 = World::new(99999);
 
         // Maps should differ (extremely unlikely to be identical with different seeds)
-        let tiles_match = world1.map.tiles.iter()
+        let tiles_match = world1
+            .map
+            .tiles
+            .iter()
             .zip(world2.map.tiles.iter())
             .all(|(a, b)| a == b);
-        assert!(!tiles_match, "Different seeds should produce different maps");
+        assert!(
+            !tiles_match,
+            "Different seeds should produce different maps"
+        );
     }
 
     #[test]
@@ -4279,7 +4631,9 @@ mod tests {
     #[test]
     fn enemies_spawned_on_floor() {
         let world = World::new(42);
-        let enemy_count = world.entities.iter()
+        let enemy_count = world
+            .entities
+            .iter()
             .filter(|e| e.ai.is_some() && e.id != world.player_id)
             .count();
         assert!(enemy_count > 0, "Floor should have enemies");
@@ -4343,7 +4697,10 @@ mod tests {
 
         // Barrel should be removed
         assert!(world.get_entity(900).is_none());
-        assert!(result.events.iter().any(|e| matches!(e, GameEvent::BarrelSmashed { .. })));
+        assert!(result
+            .events
+            .iter()
+            .any(|e| matches!(e, GameEvent::BarrelSmashed { .. })));
     }
 
     #[test]
@@ -4355,32 +4712,52 @@ mod tests {
             action_type: PlayerActionType::Interact,
         });
 
-        assert!(result.events.iter().any(|e| matches!(e, GameEvent::FountainUsed { .. })));
+        assert!(result
+            .events
+            .iter()
+            .any(|e| matches!(e, GameEvent::FountainUsed { .. })));
 
         // Fountain should be used up
         let fountain = world.get_entity(900).unwrap();
-        assert_eq!(fountain.interactive.as_ref().unwrap().uses_remaining, Some(0));
+        assert_eq!(
+            fountain.interactive.as_ref().unwrap().uses_remaining,
+            Some(0)
+        );
 
         // Second use should fail
         let result2 = world.resolve_turn(PlayerAction {
             action_type: PlayerActionType::Interact,
         });
         // No FountainUsed event on second try
-        assert!(!result2.events.iter().any(|e| matches!(e, GameEvent::FountainUsed { .. })));
+        assert!(!result2
+            .events
+            .iter()
+            .any(|e| matches!(e, GameEvent::FountainUsed { .. })));
     }
 
     #[test]
     fn interact_chest_spawns_items() {
         let mut world = World::new(42);
-        place_interactable(&mut world, InteractionType::Chest, vec!["Health Potion".to_string()]);
+        place_interactable(
+            &mut world,
+            InteractionType::Chest,
+            vec!["Health Potion".to_string()],
+        );
 
         let result = world.resolve_turn(PlayerAction {
             action_type: PlayerActionType::Interact,
         });
 
-        assert!(result.events.iter().any(|e| matches!(e, GameEvent::ChestOpened { .. })));
+        assert!(result
+            .events
+            .iter()
+            .any(|e| matches!(e, GameEvent::ChestOpened { .. })));
         // Health Potion should be spawned on the map
-        let potions: Vec<_> = world.entities.iter().filter(|e| e.name == "Health Potion").collect();
+        let potions: Vec<_> = world
+            .entities
+            .iter()
+            .filter(|e| e.name == "Health Potion")
+            .collect();
         assert!(!potions.is_empty(), "Chest should spawn contained items");
     }
 
@@ -4438,11 +4815,17 @@ mod tests {
             action_type: PlayerActionType::Interact,
         });
 
-        assert!(result.events.iter().any(|e| matches!(e, GameEvent::AltarOffering { .. })));
+        assert!(result
+            .events
+            .iter()
+            .any(|e| matches!(e, GameEvent::AltarOffering { .. })));
         // Item should be consumed
         let player = world.get_entity(0).unwrap();
         let inv = player.inventory.as_ref().unwrap();
-        assert!(inv.items.iter().all(|i| i.name != "Dagger"), "Altar should consume the offered item");
+        assert!(
+            inv.items.iter().all(|i| i.name != "Dagger"),
+            "Altar should consume the offered item"
+        );
     }
 
     #[test]
@@ -4450,31 +4833,37 @@ mod tests {
         let mut world = World::new(42);
         // Remove all interactables near player
         let player_pos = world.get_entity(0).unwrap().position;
-        world.entities.retain(|e| {
-            e.interactive.is_none() || e.position.chebyshev_distance(&player_pos) > 1
-        });
+        world
+            .entities
+            .retain(|e| e.interactive.is_none() || e.position.chebyshev_distance(&player_pos) > 1);
 
         let result = world.resolve_turn(PlayerAction {
             action_type: PlayerActionType::Interact,
         });
 
         // Should get "Nothing to interact with" message, no interaction events
-        assert!(!result.events.iter().any(|e| matches!(e,
+        assert!(!result.events.iter().any(|e| matches!(
+            e,
             GameEvent::BarrelSmashed { .. }
-            | GameEvent::FountainUsed { .. }
-            | GameEvent::ChestOpened { .. }
-            | GameEvent::AltarOffering { .. }
-            | GameEvent::LeverPulled { .. }
+                | GameEvent::FountainUsed { .. }
+                | GameEvent::ChestOpened { .. }
+                | GameEvent::AltarOffering { .. }
+                | GameEvent::LeverPulled { .. }
         )));
     }
 
     #[test]
     fn interactables_spawn_on_floor() {
         let world = World::new(42);
-        let interactive_count = world.entities.iter()
+        let interactive_count = world
+            .entities
+            .iter()
             .filter(|e| e.interactive.is_some())
             .count();
         // Normal rooms get 0-2 barrels, so at least some should spawn
-        assert!(interactive_count > 0, "Floor should have interactable entities");
+        assert!(
+            interactive_count > 0,
+            "Floor should have interactable entities"
+        );
     }
 }

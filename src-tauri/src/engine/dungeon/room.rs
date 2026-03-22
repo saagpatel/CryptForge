@@ -3,7 +3,12 @@ use rand::Rng;
 use crate::engine::entity::Position;
 use crate::engine::map::{Room, RoomType};
 
-pub fn assign_room_types(rooms: &mut Vec<Room>, rng: &mut impl Rng, is_boss_floor: bool, floor: u32) {
+pub fn assign_room_types(
+    rooms: &mut Vec<Room>,
+    rng: &mut impl Rng,
+    is_boss_floor: bool,
+    floor: u32,
+) {
     if rooms.is_empty() {
         return;
     }
@@ -85,9 +90,7 @@ pub fn assign_room_types(rooms: &mut Vec<Room>, rng: &mut impl Rng, is_boss_floo
 }
 
 pub fn get_stairs_room_idx(rooms: &[Room]) -> Option<usize> {
-    let start_idx = rooms
-        .iter()
-        .position(|r| r.room_type == RoomType::Start)?;
+    let start_idx = rooms.iter().position(|r| r.room_type == RoomType::Start)?;
     let start_center = rooms[start_idx].center();
 
     rooms

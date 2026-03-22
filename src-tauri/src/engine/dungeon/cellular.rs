@@ -118,9 +118,7 @@ fn flood_fill_region(
             let ny = y + dy;
             if map.in_bounds(nx, ny) {
                 let idx = map.idx(nx, ny);
-                if !visited[idx]
-                    && !region.contains(&(nx, ny))
-                    && map.tiles[idx] == TileType::Floor
+                if !visited[idx] && !region.contains(&(nx, ny)) && map.tiles[idx] == TileType::Floor
                 {
                     region.insert((nx, ny));
                     queue.push_back((nx, ny));
@@ -193,9 +191,7 @@ fn flood_fill_bounded(
             let ny = y + dy;
             if map.in_bounds(nx, ny) {
                 let idx = map.idx(nx, ny);
-                if !visited[idx]
-                    && !region.contains(&(nx, ny))
-                    && map.tiles[idx] == TileType::Floor
+                if !visited[idx] && !region.contains(&(nx, ny)) && map.tiles[idx] == TileType::Floor
                 {
                     region.insert((nx, ny));
                     queue.push_back((nx, ny));
@@ -246,8 +242,8 @@ fn find_nearest_floor(map: &Map, cx: i32, cy: i32) -> Option<Position> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rand::SeedableRng;
     use rand::rngs::StdRng;
+    use rand::SeedableRng;
 
     #[test]
     fn cellular_generates_maps_with_floor_tiles() {
@@ -255,20 +251,13 @@ mod tests {
             let mut rng = StdRng::seed_from_u64(seed);
             let map = generate_cellular(&mut rng);
 
-            let floor_count = map
-                .tiles
-                .iter()
-                .filter(|t| **t == TileType::Floor)
-                .count();
+            let floor_count = map.tiles.iter().filter(|t| **t == TileType::Floor).count();
             assert!(
                 floor_count > 100,
                 "seed {seed}: too few floor tiles ({floor_count})"
             );
 
-            assert!(
-                !map.rooms.is_empty(),
-                "seed {seed}: no rooms identified"
-            );
+            assert!(!map.rooms.is_empty(), "seed {seed}: no rooms identified");
 
             // Verify rooms reference floor tiles
             for room in &map.rooms {

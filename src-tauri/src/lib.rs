@@ -10,12 +10,15 @@ use tauri::Manager;
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
-            let app_dir = app.path().app_data_dir().expect("Failed to get app data dir");
+            let app_dir = app
+                .path()
+                .app_data_dir()
+                .expect("Failed to get app data dir");
             std::fs::create_dir_all(&app_dir).expect("Failed to create app data dir");
 
             let db_path = app_dir.join("cryptforge.db");
-            let conn = persistence::database::open_database(&db_path)
-                .expect("Failed to open database");
+            let conn =
+                persistence::database::open_database(&db_path).expect("Failed to open database");
             engine::achievements::ensure_table(&conn);
 
             app.manage(commands::AppState {

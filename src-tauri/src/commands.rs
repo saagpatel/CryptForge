@@ -14,7 +14,12 @@ pub struct AppState {
 }
 
 #[tauri::command]
-pub fn new_game(seed: Option<String>, class: Option<String>, modifiers: Option<Vec<String>>, state: State<'_, AppState>) -> Result<TurnResult, String> {
+pub fn new_game(
+    seed: Option<String>,
+    class: Option<String>,
+    modifiers: Option<Vec<String>>,
+    state: State<'_, AppState>,
+) -> Result<TurnResult, String> {
     let seed_val: u64 = match seed {
         Some(s) if !s.is_empty() => s.parse().unwrap_or_else(|_| {
             // Hash the string to get a seed
@@ -39,15 +44,17 @@ pub fn new_game(seed: Option<String>, class: Option<String>, modifiers: Option<V
         _ => PlayerClass::Warrior,
     };
 
-    let run_modifiers: Vec<RunModifier> = modifiers.unwrap_or_default().iter().filter_map(|m| {
-        match m.as_str() {
+    let run_modifiers: Vec<RunModifier> = modifiers
+        .unwrap_or_default()
+        .iter()
+        .filter_map(|m| match m.as_str() {
             "GlassCannon" => Some(RunModifier::GlassCannon),
             "Marathon" => Some(RunModifier::Marathon),
             "Pacifist" => Some(RunModifier::Pacifist),
             "Cursed" => Some(RunModifier::Cursed),
             _ => None,
-        }
-    }).collect();
+        })
+        .collect();
 
     let mut world = World::new_with_class(seed_val, player_class, run_modifiers);
 
@@ -68,13 +75,18 @@ pub fn new_game(seed: Option<String>, class: Option<String>, modifiers: Option<V
 }
 
 #[tauri::command]
-pub fn get_statistics(state: State<'_, AppState>) -> Result<std::collections::HashMap<String, i64>, String> {
+pub fn get_statistics(
+    state: State<'_, AppState>,
+) -> Result<std::collections::HashMap<String, i64>, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     database::get_all_stats(&db)
 }
 
 #[tauri::command]
-pub fn player_action(action: PlayerAction, state: State<'_, AppState>) -> Result<TurnResult, String> {
+pub fn player_action(
+    action: PlayerAction,
+    state: State<'_, AppState>,
+) -> Result<TurnResult, String> {
     let mut world_lock = state.world.lock().map_err(|e| e.to_string())?;
     let world = world_lock.as_mut().ok_or("No active game")?;
 
@@ -93,14 +105,18 @@ pub fn player_action(action: PlayerAction, state: State<'_, AppState>) -> Result
 
     // Auto-save every 10 turns
     if world.turn % 10 == 0 && !world.game_over {
-        if let Err(e) = state.db.lock().map(|db| { let _ = save::save_world(&db, world); }) {
+        if let Err(e) = state.db.lock().map(|db| {
+            let _ = save::save_world(&db, world);
+        }) {
             eprintln!("Failed to lock db for auto-save: {e}");
         }
     }
 
     // Handle game over (death or victory — victory sets game_over = true)
     if world.game_over {
-        if let Err(e) = state.db.lock().map(|db| { let _ = save::end_run(&db, world); }) {
+        if let Err(e) = state.db.lock().map(|db| {
+            let _ = save::end_run(&db, world);
+        }) {
             eprintln!("Failed to lock db for end-run: {e}");
         }
     }
@@ -153,7 +169,10 @@ pub fn load_game(state: State<'_, AppState>) -> Result<Option<TurnResult>, Strin
 }
 
 #[tauri::command]
-pub fn inspect_entity(entity_id: u32, state: State<'_, AppState>) -> Result<Option<EntityDetail>, String> {
+pub fn inspect_entity(
+    entity_id: u32,
+    state: State<'_, AppState>,
+) -> Result<Option<EntityDetail>, String> {
     let world_lock = state.world.lock().map_err(|e| e.to_string())?;
     let world = world_lock.as_ref().ok_or("No active game")?;
 
@@ -176,12 +195,14 @@ pub fn inspect_entity(entity_id: u32, state: State<'_, AppState>) -> Result<Opti
         return Ok(None);
     }
 
-    let attack = entity.combat.as_ref().map(|_| {
-        crate::engine::combat::effective_attack(entity)
-    });
-    let defense = entity.combat.as_ref().map(|_| {
-        crate::engine::combat::effective_defense(entity)
-    });
+    let attack = entity
+        .combat
+        .as_ref()
+        .map(|_| crate::engine::combat::effective_attack(entity));
+    let defense = entity
+        .combat
+        .as_ref()
+        .map(|_| crate::engine::combat::effective_defense(entity));
 
     Ok(Some(EntityDetail {
         id: entity.id,
@@ -250,19 +271,29 @@ pub fn get_adjacent_shop(state: State<'_, AppState>) -> Result<Option<ShopView>,
     // Check all 8 adjacent tiles + current tile for shops
     for dy in -1..=1 {
         for dx in -1..=1 {
-            if dx == 0 && dy == 0 { continue; }
+            if dx == 0 && dy == 0 {
+                continue;
+            }
             let check_pos = Position::new(player_pos.x + dx, player_pos.y + dy);
-            if let Some(shop_entity) = world.entities.iter().find(|e| e.position == check_pos && e.shop.is_some()) {
+            if let Some(shop_entity) = world
+                .entities
+                .iter()
+                .find(|e| e.position == check_pos && e.shop.is_some())
+            {
                 let shop = shop_entity.shop.as_ref().unwrap();
                 return Ok(Some(ShopView {
                     shop_id: shop_entity.id,
                     name: shop_entity.name.clone(),
-                    items: shop.items.iter().map(|item| ShopItemView {
-                        name: item.name.clone(),
-                        price: item.price,
-                        item_type: item.item_type,
-                        slot: item.slot,
-                    }).collect(),
+                    items: shop
+                        .items
+                        .iter()
+                        .map(|item| ShopItemView {
+                            name: item.name.clone(),
+                            price: item.price,
+                            item_type: item.item_type,
+                            slot: item.slot,
+                        })
+                        .collect(),
                 }));
             }
         }
@@ -272,13 +303,17 @@ pub fn get_adjacent_shop(state: State<'_, AppState>) -> Result<Option<ShopView>,
 }
 
 #[tauri::command]
-pub fn get_achievements(state: State<'_, AppState>) -> Result<Vec<achievements::AchievementStatus>, String> {
+pub fn get_achievements(
+    state: State<'_, AppState>,
+) -> Result<Vec<achievements::AchievementStatus>, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     Ok(achievements::get_all_statuses(&db))
 }
 
 #[tauri::command]
-pub fn get_unlockables(state: State<'_, AppState>) -> Result<Vec<achievements::UnlockStatus>, String> {
+pub fn get_unlockables(
+    state: State<'_, AppState>,
+) -> Result<Vec<achievements::UnlockStatus>, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     Ok(achievements::get_all_unlock_statuses(&db))
 }

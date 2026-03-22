@@ -25,7 +25,10 @@ impl TileType {
     }
 
     pub fn blocks_fov(&self) -> bool {
-        matches!(self, TileType::Wall | TileType::DoorClosed | TileType::SecretWall)
+        matches!(
+            self,
+            TileType::Wall | TileType::DoorClosed | TileType::SecretWall
+        )
     }
 
     pub fn as_str(&self) -> &'static str {

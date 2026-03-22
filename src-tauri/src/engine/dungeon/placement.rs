@@ -2,25 +2,34 @@ use rand::Rng;
 use std::collections::HashSet;
 use std::sync::atomic::{AtomicU32, Ordering};
 
+use crate::engine::enemies::{
+    all_enemies, apply_endless_scaling, boss_templates, get_boss_for_floor, get_enemy_pool,
+    EnemySpecial,
+};
 use crate::engine::entity::*;
-use crate::engine::enemies::{all_enemies, boss_templates, apply_endless_scaling, get_boss_for_floor, get_enemy_pool, EnemySpecial};
 use crate::engine::items::all_items;
 use crate::engine::map::{Map, Room, RoomType, TileType};
 
 fn map_special_to_on_hit(special: &Option<EnemySpecial>) -> Option<OnHitEffect> {
     match special {
-        Some(EnemySpecial::PoisonOnHit { damage, duration }) => {
-            Some(OnHitEffect::Poison { damage: *damage, duration: *duration })
-        }
-        Some(EnemySpecial::BurningOnHit { damage, duration }) => {
-            Some(OnHitEffect::Burn { damage: *damage, duration: *duration })
-        }
-        Some(EnemySpecial::SlowOnHit { magnitude, duration }) => {
-            Some(OnHitEffect::Slow { magnitude: *magnitude, duration: *duration })
-        }
-        Some(EnemySpecial::ConfuseOnHit { duration }) => {
-            Some(OnHitEffect::Confuse { duration: *duration })
-        }
+        Some(EnemySpecial::PoisonOnHit { damage, duration }) => Some(OnHitEffect::Poison {
+            damage: *damage,
+            duration: *duration,
+        }),
+        Some(EnemySpecial::BurningOnHit { damage, duration }) => Some(OnHitEffect::Burn {
+            damage: *damage,
+            duration: *duration,
+        }),
+        Some(EnemySpecial::SlowOnHit {
+            magnitude,
+            duration,
+        }) => Some(OnHitEffect::Slow {
+            magnitude: *magnitude,
+            duration: *duration,
+        }),
+        Some(EnemySpecial::ConfuseOnHit { duration }) => Some(OnHitEffect::Confuse {
+            duration: *duration,
+        }),
         Some(EnemySpecial::LifeSteal) => Some(OnHitEffect::LifeSteal),
         Some(EnemySpecial::DrainMaxHp) => Some(OnHitEffect::DrainMaxHp),
         _ => None,
@@ -70,7 +79,10 @@ pub fn spawn_player(pos: Position) -> Entity {
     }
 }
 
-pub fn spawn_player_with_class(pos: Position, template: &crate::engine::classes::ClassTemplate) -> Entity {
+pub fn spawn_player_with_class(
+    pos: Position,
+    template: &crate::engine::classes::ClassTemplate,
+) -> Entity {
     Entity {
         id: 0,
         name: "Player".to_string(),
@@ -149,11 +161,18 @@ pub fn spawn_entities(map: &Map, floor: u32, rng: &mut impl Rng) -> Vec<Entity> 
                     // 1-2 minions
                     let minion_count = rng.gen_range(1..=2);
                     for _ in 0..minion_count {
-                        if enemy_pool.is_empty() { break; }
-                        if let Some(enemy_name) = enemy_pool.get(rng.gen_range(0..enemy_pool.len())) {
-                            if let Some(template) = all_enemy_templates.iter().find(|t| t.name == *enemy_name) {
+                        if enemy_pool.is_empty() {
+                            break;
+                        }
+                        if let Some(enemy_name) = enemy_pool.get(rng.gen_range(0..enemy_pool.len()))
+                        {
+                            if let Some(template) =
+                                all_enemy_templates.iter().find(|t| t.name == *enemy_name)
+                            {
                                 if let Some(pos) = pick_free_pos(&positions, &occupied, rng) {
-                                    entities.push(create_enemy_from_template(template, pos, floor, rng));
+                                    entities.push(create_enemy_from_template(
+                                        template, pos, floor, rng,
+                                    ));
                                     occupied.insert(pos);
                                 }
                             }
@@ -177,14 +196,19 @@ pub fn spawn_entities(map: &Map, floor: u32, rng: &mut impl Rng) -> Vec<Entity> 
                             chest_items.push(item.name.clone());
                         }
                     }
-                    entities.push(create_interactable(InteractionType::Chest, pos, Some(chest_items)));
+                    entities.push(create_interactable(
+                        InteractionType::Chest,
+                        pos,
+                        Some(chest_items),
+                    ));
                     occupied.insert(pos);
                 }
                 // 1-3 loose items
                 let item_count = rng.gen_range(1..=3);
                 for _ in 0..item_count {
                     if let Some(pos) = pick_free_pos(&positions, &occupied, rng) {
-                        if let Some(mut item) = pick_weighted_item(floor, rng, &all_item_templates) {
+                        if let Some(mut item) = pick_weighted_item(floor, rng, &all_item_templates)
+                        {
                             item.position = pos;
                             entities.push(item);
                             occupied.insert(pos);
@@ -194,9 +218,12 @@ pub fn spawn_entities(map: &Map, floor: u32, rng: &mut impl Rng) -> Vec<Entity> 
                 // 1 enemy guarding
                 if !enemy_pool.is_empty() {
                     if let Some(enemy_name) = enemy_pool.get(rng.gen_range(0..enemy_pool.len())) {
-                        if let Some(template) = all_enemy_templates.iter().find(|t| t.name == *enemy_name) {
+                        if let Some(template) =
+                            all_enemy_templates.iter().find(|t| t.name == *enemy_name)
+                        {
                             if let Some(pos) = pick_free_pos(&positions, &occupied, rng) {
-                                entities.push(create_enemy_from_template(template, pos, floor, rng));
+                                entities
+                                    .push(create_enemy_from_template(template, pos, floor, rng));
                                 occupied.insert(pos);
                             }
                         }
@@ -208,7 +235,8 @@ pub fn spawn_entities(map: &Map, floor: u32, rng: &mut impl Rng) -> Vec<Entity> 
                 let item_count = rng.gen_range(2..=3);
                 for _ in 0..item_count {
                     if let Some(pos) = pick_free_pos(&positions, &occupied, rng) {
-                        if let Some(mut item) = pick_weighted_item(floor, rng, &all_item_templates) {
+                        if let Some(mut item) = pick_weighted_item(floor, rng, &all_item_templates)
+                        {
                             item.position = pos;
                             entities.push(item);
                             occupied.insert(pos);
@@ -248,13 +276,19 @@ pub fn spawn_entities(map: &Map, floor: u32, rng: &mut impl Rng) -> Vec<Entity> 
             }
             RoomType::Normal => {
                 // Enemies: floor/2 + rng(1,3)
-                let enemy_count = (floor as i32 / 2 + rng.gen_range(1..=3)).min(positions.len() as i32 / 2);
+                let enemy_count =
+                    (floor as i32 / 2 + rng.gen_range(1..=3)).min(positions.len() as i32 / 2);
                 for _ in 0..enemy_count {
-                    if enemy_pool.is_empty() { break; }
+                    if enemy_pool.is_empty() {
+                        break;
+                    }
                     if let Some(enemy_name) = enemy_pool.get(rng.gen_range(0..enemy_pool.len())) {
-                        if let Some(template) = all_enemy_templates.iter().find(|t| t.name == *enemy_name) {
+                        if let Some(template) =
+                            all_enemy_templates.iter().find(|t| t.name == *enemy_name)
+                        {
                             if let Some(pos) = pick_free_pos(&positions, &occupied, rng) {
-                                entities.push(create_enemy_from_template(template, pos, floor, rng));
+                                entities
+                                    .push(create_enemy_from_template(template, pos, floor, rng));
                                 occupied.insert(pos);
                             }
                         }
@@ -263,7 +297,8 @@ pub fn spawn_entities(map: &Map, floor: u32, rng: &mut impl Rng) -> Vec<Entity> 
                 // 30% chance of an item
                 if rng.gen::<f32>() < 0.30 {
                     if let Some(pos) = pick_free_pos(&positions, &occupied, rng) {
-                        if let Some(mut item) = pick_weighted_item(floor, rng, &all_item_templates) {
+                        if let Some(mut item) = pick_weighted_item(floor, rng, &all_item_templates)
+                        {
                             item.position = pos;
                             entities.push(item);
                             occupied.insert(pos);
@@ -292,8 +327,13 @@ pub fn spawn_entities(map: &Map, floor: u32, rng: &mut impl Rng) -> Vec<Entity> 
     for _ in 0..trap_count {
         if let Some(pos) = pick_free_pos(&all_floor_positions, &occupied, rng) {
             let trap_type = match rng.gen_range(0..4) {
-                0 => TrapType::Spike { damage: 5 + floor as i32 },
-                1 => TrapType::Poison { damage: 2, duration: 3 },
+                0 => TrapType::Spike {
+                    damage: 5 + floor as i32,
+                },
+                1 => TrapType::Poison {
+                    damage: 2,
+                    duration: 3,
+                },
                 2 => TrapType::Teleport,
                 _ => TrapType::Alarm,
             };
@@ -333,7 +373,9 @@ pub fn spawn_entities(map: &Map, floor: u32, rng: &mut impl Rng) -> Vec<Entity> 
 
     // 15% chance per non-boss floor: spawn an NPC ally (Prisoner)
     if boss_name.is_none() && rng.gen::<f32>() < 0.15 {
-        let normal_rooms: Vec<&Room> = map.rooms.iter()
+        let normal_rooms: Vec<&Room> = map
+            .rooms
+            .iter()
             .filter(|r| r.room_type == RoomType::Normal)
             .collect();
         if let Some(ally_room) = normal_rooms.get(rng.gen_range(0..normal_rooms.len().max(1))) {
@@ -347,7 +389,9 @@ pub fn spawn_entities(map: &Map, floor: u32, rng: &mut impl Rng) -> Vec<Entity> 
 
     // Place boss key on boss floors (in a non-boss, non-start room)
     if boss_name.is_some() {
-        let key_rooms: Vec<&Room> = map.rooms.iter()
+        let key_rooms: Vec<&Room> = map
+            .rooms
+            .iter()
             .filter(|r| r.room_type != RoomType::Boss && r.room_type != RoomType::Start)
             .collect();
         if let Some(key_room) = key_rooms.get(rng.gen_range(0..key_rooms.len().max(1))) {
@@ -379,7 +423,11 @@ fn pick_free_pos(
     occupied: &HashSet<Position>,
     rng: &mut impl Rng,
 ) -> Option<Position> {
-    let free: Vec<Position> = positions.iter().filter(|p| !occupied.contains(p)).cloned().collect();
+    let free: Vec<Position> = positions
+        .iter()
+        .filter(|p| !occupied.contains(p))
+        .cloned()
+        .collect();
     if free.is_empty() {
         return None;
     }
@@ -431,7 +479,10 @@ fn create_enemy_from_template(
             defense,
             template.speed,
             template.crit_chance,
-            Some(OnHitEffect::Poison { damage: 2, duration: 3 }),
+            Some(OnHitEffect::Poison {
+                damage: 2,
+                duration: 3,
+            }),
         ),
         Some(ElitePrefix::Spectral) => (
             hp,
@@ -505,7 +556,9 @@ fn create_item(
     pos: Position,
     templates: &[crate::engine::items::ItemTemplate],
 ) -> Entity {
-    let t = templates.iter().find(|t| t.name == name)
+    let t = templates
+        .iter()
+        .find(|t| t.name == name)
         .unwrap_or_else(|| panic!("Item template '{}' not found", name));
     Entity {
         id: next_id(),
@@ -621,7 +674,11 @@ fn generate_shop_inventory(
 ) -> Vec<ShopItem> {
     let eligible: Vec<&crate::engine::items::ItemTemplate> = templates
         .iter()
-        .filter(|t| t.min_floor <= floor + 1 && t.item_type != ItemType::Key && t.item_type != ItemType::Projectile)
+        .filter(|t| {
+            t.min_floor <= floor + 1
+                && t.item_type != ItemType::Key
+                && t.item_type != ItemType::Projectile
+        })
         .collect();
 
     let count = rng.gen_range(4..=6).min(eligible.len());
@@ -694,12 +751,12 @@ fn create_interactable(
     contained_items: Option<Vec<String>>,
 ) -> Entity {
     let (name, glyph, blocks_movement) = match interaction_type {
-        InteractionType::Barrel => ("Barrel", 0x6F, true),      // 'o'
-        InteractionType::Lever => ("Lever", 0x2F, false),       // '/'
+        InteractionType::Barrel => ("Barrel", 0x6F, true), // 'o'
+        InteractionType::Lever => ("Lever", 0x2F, false),  // '/'
         InteractionType::Fountain => ("Fountain", 0x7E, false), // '~'
-        InteractionType::Altar => ("Altar", 0x2B, false),       // '+'
-        InteractionType::Chest => ("Chest", 0x3D, false),       // '='
-        InteractionType::Anvil => ("Anvil", 0x26, false),       // '&'
+        InteractionType::Altar => ("Altar", 0x2B, false),  // '+'
+        InteractionType::Chest => ("Chest", 0x3D, false),  // '='
+        InteractionType::Anvil => ("Anvil", 0x26, false),  // '&'
     };
 
     let uses = match interaction_type {
@@ -754,7 +811,7 @@ fn create_ally(rng: &mut impl Rng, pos: Position) -> Entity {
         id: next_id(),
         name: name.to_string(),
         position: pos,
-        glyph: 0x41, // 'A'
+        glyph: 0x41,                      // 'A'
         render_order: RenderOrder::Enemy, // Same layer as actors
         blocks_movement: true,
         blocks_fov: false,
@@ -778,7 +835,10 @@ fn create_ally(rng: &mut impl Rng, pos: Position) -> Entity {
         trap: None,
         stair: None,
         loot_table: None,
-        flavor_text: Some(format!("A rescued {}. They will fight alongside you.", name.to_lowercase())),
+        flavor_text: Some(format!(
+            "A rescued {}. They will fight alongside you.",
+            name.to_lowercase()
+        )),
         shop: None,
         interactive: None,
         elite: None,

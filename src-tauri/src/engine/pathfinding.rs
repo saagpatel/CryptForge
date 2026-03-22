@@ -1,5 +1,5 @@
-use std::collections::{BinaryHeap, VecDeque};
 use std::cmp::Ordering;
+use std::collections::{BinaryHeap, VecDeque};
 
 use serde::{Deserialize, Serialize};
 
@@ -30,7 +30,16 @@ impl DijkstraMap {
         while let Some(pos) = queue.pop_front() {
             let current_dist = values[map.idx(pos.x, pos.y)];
 
-            for (dx, dy) in &[(-1,0),(1,0),(0,-1),(0,1),(-1,-1),(-1,1),(1,-1),(1,1)] {
+            for (dx, dy) in &[
+                (-1, 0),
+                (1, 0),
+                (0, -1),
+                (0, 1),
+                (-1, -1),
+                (-1, 1),
+                (1, -1),
+                (1, 1),
+            ] {
                 let nx = pos.x + dx;
                 let ny = pos.y + dy;
                 if !map.in_bounds(nx, ny) {
@@ -66,7 +75,16 @@ impl DijkstraMap {
         let mut best_pos = None;
         let mut best_val = self.get(pos.x, pos.y);
 
-        for (dx, dy) in &[(-1,0),(1,0),(0,-1),(0,1),(-1,-1),(-1,1),(1,-1),(1,1)] {
+        for (dx, dy) in &[
+            (-1, 0),
+            (1, 0),
+            (0, -1),
+            (0, 1),
+            (-1, -1),
+            (-1, 1),
+            (1, -1),
+            (1, 1),
+        ] {
             let nx = pos.x + dx;
             let ny = pos.y + dy;
             if map.in_bounds(nx, ny) && map.tiles[map.idx(nx, ny)].is_walkable() {
@@ -84,7 +102,16 @@ impl DijkstraMap {
         let mut best_pos = None;
         let mut best_val = self.get(pos.x, pos.y);
 
-        for (dx, dy) in &[(-1,0),(1,0),(0,-1),(0,1),(-1,-1),(-1,1),(1,-1),(1,1)] {
+        for (dx, dy) in &[
+            (-1, 0),
+            (1, 0),
+            (0, -1),
+            (0, 1),
+            (-1, -1),
+            (-1, 1),
+            (1, -1),
+            (1, 1),
+        ] {
             let nx = pos.x + dx;
             let ny = pos.y + dy;
             if map.in_bounds(nx, ny) && map.tiles[map.idx(nx, ny)].is_walkable() {
@@ -152,7 +179,16 @@ pub fn astar(map: &Map, start: Position, goal: Position) -> Option<Vec<Position>
             continue;
         }
 
-        for (dx, dy) in &[(-1,0),(1,0),(0,-1),(0,1),(-1,-1),(-1,1),(1,-1),(1,1)] {
+        for (dx, dy) in &[
+            (-1, 0),
+            (1, 0),
+            (0, -1),
+            (0, 1),
+            (-1, -1),
+            (-1, 1),
+            (1, -1),
+            (1, 1),
+        ] {
             let nx = node.pos.x + dx;
             let ny = node.pos.y + dy;
 
@@ -281,13 +317,21 @@ mod tests {
     #[test]
     fn line_of_sight_clear() {
         let map = make_test_map();
-        assert!(has_line_of_sight(&map, Position::new(5, 5), Position::new(15, 5)));
+        assert!(has_line_of_sight(
+            &map,
+            Position::new(5, 5),
+            Position::new(15, 5)
+        ));
     }
 
     #[test]
     fn line_of_sight_blocked() {
         let mut map = make_test_map();
         map.set_tile(10, 5, TileType::Wall);
-        assert!(!has_line_of_sight(&map, Position::new(5, 5), Position::new(15, 5)));
+        assert!(!has_line_of_sight(
+            &map,
+            Position::new(5, 5),
+            Position::new(15, 5)
+        ));
     }
 }

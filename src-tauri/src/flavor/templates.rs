@@ -1,16 +1,45 @@
 use rand::Rng;
 
 const ITEM_PREFIXES: &[&str] = &[
-    "Ancient", "Blessed", "Cursed", "Enchanted", "Forgotten", "Gleaming",
-    "Haunted", "Infernal", "Jagged", "Keen", "Lost", "Mystic", "Noble",
-    "Ornate", "Primal", "Radiant", "Sacred", "Twisted", "Unholy", "Wicked",
+    "Ancient",
+    "Blessed",
+    "Cursed",
+    "Enchanted",
+    "Forgotten",
+    "Gleaming",
+    "Haunted",
+    "Infernal",
+    "Jagged",
+    "Keen",
+    "Lost",
+    "Mystic",
+    "Noble",
+    "Ornate",
+    "Primal",
+    "Radiant",
+    "Sacred",
+    "Twisted",
+    "Unholy",
+    "Wicked",
 ];
 
 const ITEM_SUFFIXES: &[&str] = &[
-    "of the Abyss", "of Valor", "of Shadows", "of the Fallen",
-    "of Flame", "of Ice", "of Thunder", "of the Deep",
-    "of Ruin", "of Grace", "of Wrath", "of the Void",
-    "of Secrets", "of Despair", "of Glory", "of the Ancients",
+    "of the Abyss",
+    "of Valor",
+    "of Shadows",
+    "of the Fallen",
+    "of Flame",
+    "of Ice",
+    "of Thunder",
+    "of the Deep",
+    "of Ruin",
+    "of Grace",
+    "of Wrath",
+    "of the Void",
+    "of Secrets",
+    "of Despair",
+    "of Glory",
+    "of the Ancients",
 ];
 
 const ITEM_DESCRIPTIONS: &[&str] = &[

@@ -152,16 +152,11 @@ pub struct RangedStats {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AIBehavior {
     Melee,
-    Ranged {
-        range: i32,
-        preferred_distance: i32,
-    },
+    Ranged { range: i32, preferred_distance: i32 },
     Passive,
     Fleeing,
     Boss(BossPhase),
-    Ally {
-        follow_distance: i32,
-    },
+    Ally { follow_distance: i32 },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -302,13 +297,22 @@ pub enum AmmoType {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ItemEffect {
     Heal(i32),
-    DamageArea { damage: i32, radius: i32 },
-    ApplyStatus { effect: StatusType, duration: u32 },
+    DamageArea {
+        damage: i32,
+        radius: i32,
+    },
+    ApplyStatus {
+        effect: StatusType,
+        duration: u32,
+    },
     RevealMap,
     RevealSecrets,
     Teleport,
     CureStatus,
-    RangedAttack { damage: i32, status: Option<(StatusType, u32)> },
+    RangedAttack {
+        damage: i32,
+        status: Option<(StatusType, u32)>,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -504,14 +508,31 @@ pub enum PlayerActionType {
     EquipItem(u32),
     UnequipSlot(EquipSlot),
     LevelUpChoice(LevelUpChoice),
-    ClickMove { x: i32, y: i32 },
+    ClickMove {
+        x: i32,
+        y: i32,
+    },
     AutoExplore,
-    RangedAttack { target_id: u32 },
-    BuyItem { shop_id: u32, index: usize },
-    SellItem { index: usize, shop_id: u32 },
+    RangedAttack {
+        target_id: u32,
+    },
+    BuyItem {
+        shop_id: u32,
+        index: usize,
+    },
+    SellItem {
+        index: usize,
+        shop_id: u32,
+    },
     Interact,
-    UseAbility { ability_id: String, target: Option<Position> },
-    Craft { weapon_idx: u32, scroll_idx: u32 },
+    UseAbility {
+        ability_id: String,
+        target: Option<Position>,
+    },
+    Craft {
+        weapon_idx: u32,
+        scroll_idx: u32,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

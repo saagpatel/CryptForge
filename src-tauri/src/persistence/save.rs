@@ -1,11 +1,11 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use rand::SeedableRng;
 use rand::rngs::StdRng;
+use rand::SeedableRng;
 use rusqlite::Connection;
 
-use crate::engine::state::World;
 use super::database;
+use crate::engine::state::World;
 
 /// Get today's date as YYYY-MM-DD string using UTC.
 pub fn today_date_string() -> String {
@@ -65,7 +65,10 @@ pub fn end_run(conn: &Connection, world: &World) -> Result<(), String> {
     let cause = if world.victory {
         None
     } else {
-        world.last_damage_source.as_deref().or(Some("Slain in the dungeon"))
+        world
+            .last_damage_source
+            .as_deref()
+            .or(Some("Slain in the dungeon"))
     };
 
     let score = {
@@ -104,10 +107,7 @@ pub fn end_run(conn: &Connection, world: &World) -> Result<(), String> {
     if world.victory {
         let _ = database::increment_stat(conn, "total_victories", 1);
     } else if let Some(ref cause_str) = cause {
-        let death_key = format!(
-            "deaths_by_{}",
-            cause_str.to_lowercase().replace(' ', "_")
-        );
+        let death_key = format!("deaths_by_{}", cause_str.to_lowercase().replace(' ', "_"));
         let _ = database::increment_stat(conn, &death_key, 1);
     }
     let class_key = format!("class_{}", class_str.to_lowercase());

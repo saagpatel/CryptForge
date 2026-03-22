@@ -20,7 +20,16 @@ pub fn compute_fov(origin: Position, radius: i32, map: &Map) -> HashSet<Position
     visible.insert(origin);
 
     for octant in 0..8 {
-        cast_light(map, origin, radius, 1, 1.0, 0.0, &OCTANT_MUL[octant], &mut visible);
+        cast_light(
+            map,
+            origin,
+            radius,
+            1,
+            1.0,
+            0.0,
+            &OCTANT_MUL[octant],
+            &mut visible,
+        );
     }
     visible
 }

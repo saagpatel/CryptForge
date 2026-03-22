@@ -40,7 +40,10 @@ pub fn get_abilities(class: PlayerClass) -> Vec<Ability> {
                 mana_cost: 15,
                 class: PlayerClass::Warrior,
                 targeting: AbilityTargeting::Adjacent,
-                effect: AbilityEffect::StatusTarget { status: StatusType::Stunned, duration: 2 },
+                effect: AbilityEffect::StatusTarget {
+                    status: StatusType::Stunned,
+                    duration: 2,
+                },
                 description: "Stun an adjacent enemy for 2 turns.".to_string(),
             },
             Ability {
@@ -49,7 +52,10 @@ pub fn get_abilities(class: PlayerClass) -> Vec<Ability> {
                 mana_cost: 20,
                 class: PlayerClass::Warrior,
                 targeting: AbilityTargeting::SelfOnly,
-                effect: AbilityEffect::StatusSelf { status: StatusType::Strengthened, duration: 10 },
+                effect: AbilityEffect::StatusSelf {
+                    status: StatusType::Strengthened,
+                    duration: 10,
+                },
                 description: "Gain Strengthened for 10 turns.".to_string(),
             },
             Ability {
@@ -69,7 +75,10 @@ pub fn get_abilities(class: PlayerClass) -> Vec<Ability> {
                 mana_cost: 15,
                 class: PlayerClass::Rogue,
                 targeting: AbilityTargeting::SelfOnly,
-                effect: AbilityEffect::StatusSelf { status: StatusType::Invisible, duration: 3 },
+                effect: AbilityEffect::StatusSelf {
+                    status: StatusType::Invisible,
+                    duration: 3,
+                },
                 description: "Become invisible for 3 turns.".to_string(),
             },
             Ability {
@@ -87,7 +96,10 @@ pub fn get_abilities(class: PlayerClass) -> Vec<Ability> {
                 mana_cost: 20,
                 class: PlayerClass::Rogue,
                 targeting: AbilityTargeting::SelfOnly,
-                effect: AbilityEffect::PoisonNextAttack { damage: 3, duration: 5 },
+                effect: AbilityEffect::PoisonNextAttack {
+                    damage: 3,
+                    duration: 5,
+                },
                 description: "Your next attack poisons the target.".to_string(),
             },
         ],
@@ -97,7 +109,10 @@ pub fn get_abilities(class: PlayerClass) -> Vec<Ability> {
                 name: "Fireball".to_string(),
                 mana_cost: 20,
                 class: PlayerClass::Mage,
-                targeting: AbilityTargeting::Targeted { range: 6, radius: 2 },
+                targeting: AbilityTargeting::Targeted {
+                    range: 6,
+                    radius: 2,
+                },
                 effect: AbilityEffect::Damage { amount: 12 },
                 description: "Launch a fireball that explodes in a 2-tile radius.".to_string(),
             },
@@ -106,8 +121,14 @@ pub fn get_abilities(class: PlayerClass) -> Vec<Ability> {
                 name: "Frost Bolt".to_string(),
                 mana_cost: 15,
                 class: PlayerClass::Mage,
-                targeting: AbilityTargeting::Targeted { range: 8, radius: 0 },
-                effect: AbilityEffect::StatusTarget { status: StatusType::Slowed, duration: 3 },
+                targeting: AbilityTargeting::Targeted {
+                    range: 8,
+                    radius: 0,
+                },
+                effect: AbilityEffect::StatusTarget {
+                    status: StatusType::Slowed,
+                    duration: 3,
+                },
                 description: "Freeze a target at range, slowing them for 3 turns.".to_string(),
             },
             Ability {
@@ -115,7 +136,10 @@ pub fn get_abilities(class: PlayerClass) -> Vec<Ability> {
                 name: "Blink".to_string(),
                 mana_cost: 25,
                 class: PlayerClass::Mage,
-                targeting: AbilityTargeting::Targeted { range: 5, radius: 0 },
+                targeting: AbilityTargeting::Targeted {
+                    range: 5,
+                    radius: 0,
+                },
                 effect: AbilityEffect::Teleport { range: 5 },
                 description: "Teleport to a visible tile within 5 range.".to_string(),
             },
@@ -133,7 +157,9 @@ pub fn get_abilities(class: PlayerClass) -> Vec<Ability> {
 }
 
 pub fn get_ability(class: PlayerClass, ability_id: &str) -> Option<Ability> {
-    get_abilities(class).into_iter().find(|a| a.id == ability_id)
+    get_abilities(class)
+        .into_iter()
+        .find(|a| a.id == ability_id)
 }
 
 pub fn to_ability_views(class: PlayerClass) -> Vec<AbilityView> {

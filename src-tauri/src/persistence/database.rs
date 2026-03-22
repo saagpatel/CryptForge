@@ -1,4 +1,4 @@
-use rusqlite::{Connection, params};
+use rusqlite::{params, Connection};
 use std::collections::HashMap;
 use std::path::Path;
 
@@ -27,11 +27,16 @@ fn run_migrations(conn: &Connection) -> Result<(), String> {
     conn.execute_batch(
         "CREATE TABLE IF NOT EXISTS schema_version (
             version INTEGER PRIMARY KEY NOT NULL
-        );"
-    ).map_err(|e| format!("Migration error: {}", e))?;
+        );",
+    )
+    .map_err(|e| format!("Migration error: {}", e))?;
 
     let current_version: u32 = conn
-        .query_row("SELECT COALESCE(MAX(version), 0) FROM schema_version", [], |row| row.get(0))
+        .query_row(
+            "SELECT COALESCE(MAX(version), 0) FROM schema_version",
+            [],
+            |row| row.get(0),
+        )
         .unwrap_or(0);
 
     if current_version < 1 {
@@ -83,8 +88,9 @@ fn migrate_v1(conn: &Connection) -> Result<(), String> {
             value TEXT NOT NULL
         );
 
-        INSERT OR REPLACE INTO schema_version (version) VALUES (1);"
-    ).map_err(|e| format!("Migration v1 error: {}", e))?;
+        INSERT OR REPLACE INTO schema_version (version) VALUES (1);",
+    )
+    .map_err(|e| format!("Migration v1 error: {}", e))?;
 
     Ok(())
 }
@@ -109,35 +115,44 @@ fn migrate_v2(conn: &Connection) -> Result<(), String> {
              value INTEGER NOT NULL DEFAULT 0
          );
 
-         INSERT OR REPLACE INTO schema_version (version) VALUES (2);"
-    ).map_err(|e| format!("Migration v2 error: {}", e))?;
+         INSERT OR REPLACE INTO schema_version (version) VALUES (2);",
+    )
+    .map_err(|e| format!("Migration v2 error: {}", e))?;
 
     Ok(())
 }
 
 /// Check if an active save exists.
 pub fn has_save(conn: &Connection) -> bool {
-    conn.query_row("SELECT COUNT(*) FROM save_state", [], |row| row.get::<_, i64>(0))
-        .unwrap_or(0) > 0
+    conn.query_row("SELECT COUNT(*) FROM save_state", [], |row| {
+        row.get::<_, i64>(0)
+    })
+    .unwrap_or(0)
+        > 0
 }
 
 /// Save game state as a BLOB.
-pub fn save_game_state(conn: &Connection, data: &[u8], seed: u64, floor: u32, turn: u32) -> Result<(), String> {
+pub fn save_game_state(
+    conn: &Connection,
+    data: &[u8],
+    seed: u64,
+    floor: u32,
+    turn: u32,
+) -> Result<(), String> {
     conn.execute(
         "INSERT OR REPLACE INTO save_state (id, data, seed, floor, turn, updated_at)
          VALUES (1, ?1, ?2, ?3, ?4, datetime('now'))",
         params![data, seed.to_string(), floor, turn],
-    ).map_err(|e| format!("Save error: {}", e))?;
+    )
+    .map_err(|e| format!("Save error: {}", e))?;
     Ok(())
 }
 
 /// Load game state BLOB.
 pub fn load_game_state(conn: &Connection) -> Result<Option<Vec<u8>>, String> {
-    let result = conn.query_row(
-        "SELECT data FROM save_state WHERE id = 1",
-        [],
-        |row| row.get::<_, Vec<u8>>(0),
-    );
+    let result = conn.query_row("SELECT data FROM save_state WHERE id = 1", [], |row| {
+        row.get::<_, Vec<u8>>(0)
+    });
 
     match result {
         Ok(data) => Ok(Some(data)),
@@ -180,7 +195,8 @@ pub fn record_run(
         "INSERT INTO high_scores (score, floor_reached, seed, victory, class)
          VALUES (?1, ?2, ?3, ?4, ?5)",
         params![score, floor_reached, seed, victory as i32, class],
-    ).map_err(|e| format!("Record high score error: {}", e))?;
+    )
+    .map_err(|e| format!("Record high score error: {}", e))?;
 
     // Keep only top 10 high scores
     conn.execute(
@@ -222,7 +238,9 @@ pub fn get_high_scores(conn: &Connection) -> Result<Vec<crate::engine::entity::H
 }
 
 /// Get run history (most recent 50).
-pub fn get_run_history(conn: &Connection) -> Result<Vec<crate::engine::entity::RunSummary>, String> {
+pub fn get_run_history(
+    conn: &Connection,
+) -> Result<Vec<crate::engine::entity::RunSummary>, String> {
     let mut stmt = conn
         .prepare("SELECT seed, floor_reached, enemies_killed, bosses_killed, level_reached, turns_taken, score, cause_of_death, victory, timestamp, COALESCE(class, 'Warrior'), COALESCE(modifiers, '[]') FROM runs ORDER BY id DESC LIMIT 50")
         .map_err(|e| format!("Query error: {}", e))?;
@@ -292,7 +310,8 @@ pub fn has_played_daily(conn: &Connection, date: &str) -> bool {
         params![date],
         |row| row.get::<_, i64>(0),
     )
-    .unwrap_or(0) > 0
+    .unwrap_or(0)
+        > 0
 }
 
 /// Record a daily challenge result.
@@ -381,7 +400,21 @@ mod tests {
     #[test]
     fn record_run_and_history() {
         let conn = test_db();
-        record_run(&conn, "42", 5, 10, 1, 3, 50, 1250, Some("Slain by goblin"), false, "Warrior", &[]).unwrap();
+        record_run(
+            &conn,
+            "42",
+            5,
+            10,
+            1,
+            3,
+            50,
+            1250,
+            Some("Slain by goblin"),
+            false,
+            "Warrior",
+            &[],
+        )
+        .unwrap();
         let runs = get_run_history(&conn).unwrap();
         assert_eq!(runs.len(), 1);
         assert_eq!(runs[0].floor_reached, 5);
@@ -408,7 +441,21 @@ mod tests {
     fn high_scores_pruned_to_10() {
         let conn = test_db();
         for i in 0..15u32 {
-            record_run(&conn, &i.to_string(), 1, i, 0, 1, 10, i * 100, None, false, "Warrior", &[]).unwrap();
+            record_run(
+                &conn,
+                &i.to_string(),
+                1,
+                i,
+                0,
+                1,
+                10,
+                i * 100,
+                None,
+                false,
+                "Warrior",
+                &[],
+            )
+            .unwrap();
         }
         let scores = get_high_scores(&conn).unwrap();
         assert_eq!(scores.len(), 10);

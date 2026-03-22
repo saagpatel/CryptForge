@@ -2,14 +2,26 @@ use super::entity::*;
 
 /// Apply a status effect to an entity, respecting stacking rules.
 /// Same-type effects refresh duration rather than stacking.
-pub fn apply_status(entity: &mut Entity, effect_type: StatusType, duration: u32, magnitude: i32, source: &str) {
+pub fn apply_status(
+    entity: &mut Entity,
+    effect_type: StatusType,
+    duration: u32,
+    magnitude: i32,
+    source: &str,
+) {
     // Boss immunities
-    if is_boss(entity) && (effect_type == StatusType::Stunned || effect_type == StatusType::Confused) {
+    if is_boss(entity)
+        && (effect_type == StatusType::Stunned || effect_type == StatusType::Confused)
+    {
         return;
     }
 
     // Refresh if same type exists
-    if let Some(existing) = entity.status_effects.iter_mut().find(|s| s.effect_type == effect_type) {
+    if let Some(existing) = entity
+        .status_effects
+        .iter_mut()
+        .find(|s| s.effect_type == effect_type)
+    {
         existing.duration = existing.duration.max(duration);
         existing.magnitude = existing.magnitude.max(magnitude);
         return;
@@ -25,7 +37,9 @@ pub fn apply_status(entity: &mut Entity, effect_type: StatusType, duration: u32,
 
 /// Remove all negative status effects (used by Antidote/CureStatus).
 pub fn cure_negative_effects(entity: &mut Entity) {
-    entity.status_effects.retain(|s| !s.effect_type.is_negative());
+    entity
+        .status_effects
+        .retain(|s| !s.effect_type.is_negative());
 }
 
 /// Tick all effects on an entity. Returns (damage_taken, healing_done, expired_effects).
@@ -72,23 +86,36 @@ pub fn tick_effects(entity: &mut Entity) -> EffectTickResult {
 
 /// Check if entity is stunned (should skip turn).
 pub fn is_stunned(entity: &Entity) -> bool {
-    entity.status_effects.iter().any(|s| s.effect_type == StatusType::Stunned)
+    entity
+        .status_effects
+        .iter()
+        .any(|s| s.effect_type == StatusType::Stunned)
 }
 
 /// Check if entity is invisible.
 pub fn is_invisible(entity: &Entity) -> bool {
-    entity.status_effects.iter().any(|s| s.effect_type == StatusType::Invisible)
+    entity
+        .status_effects
+        .iter()
+        .any(|s| s.effect_type == StatusType::Invisible)
 }
 
 /// Check if entity is confused.
 pub fn is_confused(entity: &Entity) -> bool {
-    entity.status_effects.iter().any(|s| s.effect_type == StatusType::Confused)
+    entity
+        .status_effects
+        .iter()
+        .any(|s| s.effect_type == StatusType::Confused)
 }
 
 /// Get the effective FOV radius considering Blinded status.
 pub fn effective_fov_radius(entity: &Entity) -> i32 {
     let base = entity.fov.as_ref().map(|f| f.radius).unwrap_or(8);
-    if entity.status_effects.iter().any(|s| s.effect_type == StatusType::Blinded) {
+    if entity
+        .status_effects
+        .iter()
+        .any(|s| s.effect_type == StatusType::Blinded)
+    {
         2
     } else {
         base
@@ -97,7 +124,9 @@ pub fn effective_fov_radius(entity: &Entity) -> i32 {
 
 /// Get shield HP buffer if Shielded.
 pub fn shield_buffer(entity: &Entity) -> i32 {
-    entity.status_effects.iter()
+    entity
+        .status_effects
+        .iter()
         .find(|s| s.effect_type == StatusType::Shielded)
         .map(|s| s.magnitude)
         .unwrap_or(0)
@@ -105,7 +134,11 @@ pub fn shield_buffer(entity: &Entity) -> i32 {
 
 /// Absorb damage through shield. Returns remaining damage after shield absorption.
 pub fn absorb_shield_damage(entity: &mut Entity, damage: i32) -> i32 {
-    if let Some(shield) = entity.status_effects.iter_mut().find(|s| s.effect_type == StatusType::Shielded) {
+    if let Some(shield) = entity
+        .status_effects
+        .iter_mut()
+        .find(|s| s.effect_type == StatusType::Shielded)
+    {
         if shield.magnitude >= damage {
             shield.magnitude -= damage;
             return 0;
@@ -114,7 +147,9 @@ pub fn absorb_shield_damage(entity: &mut Entity, damage: i32) -> i32 {
             shield.magnitude = 0;
             shield.duration = 0;
             // Remove the depleted shield immediately
-            entity.status_effects.retain(|s| !(s.effect_type == StatusType::Shielded && s.magnitude == 0));
+            entity
+                .status_effects
+                .retain(|s| !(s.effect_type == StatusType::Shielded && s.magnitude == 0));
             return remaining;
         }
     }

@@ -76,7 +76,11 @@ pub fn generate_floor(seed: u64, floor: u32) -> Map {
 
     // Place up stairs in start room (except floor 1)
     if floor > 1 {
-        if let Some(start_room) = map.rooms.iter().find(|r| r.room_type == crate::engine::map::RoomType::Start) {
+        if let Some(start_room) = map
+            .rooms
+            .iter()
+            .find(|r| r.room_type == crate::engine::map::RoomType::Start)
+        {
             let center = start_room.center();
             // Offset by 1 so up/down stairs don't collide; use find_nearest_floor
             // to handle cellular automata rooms where center+1 may be a wall
@@ -93,7 +97,10 @@ pub fn generate_floor(seed: u64, floor: u32) -> Map {
 }
 
 /// Find the nearest floor tile to a position (BFS spiral outward).
-fn find_nearest_floor(map: &Map, start: crate::engine::entity::Position) -> crate::engine::entity::Position {
+fn find_nearest_floor(
+    map: &Map,
+    start: crate::engine::entity::Position,
+) -> crate::engine::entity::Position {
     use crate::engine::entity::Position;
     if map.in_bounds(start.x, start.y) && map.get_tile(start.x, start.y) == TileType::Floor {
         return start;
@@ -118,10 +125,13 @@ fn find_nearest_floor(map: &Map, start: crate::engine::entity::Position) -> crat
 /// Carve a 3x3 secret room behind a wall adjacent to a Normal room.
 /// The connecting wall tile becomes SecretWall (bumping reveals it).
 fn carve_secret_room(map: &mut Map, rng: &mut impl Rng) {
-    use crate::engine::map::{Room, RoomType, MAP_WIDTH, MAP_HEIGHT};
+    use crate::engine::map::{Room, RoomType, MAP_HEIGHT, MAP_WIDTH};
 
     // Find Normal rooms to attach secret room to
-    let normal_indices: Vec<usize> = map.rooms.iter().enumerate()
+    let normal_indices: Vec<usize> = map
+        .rooms
+        .iter()
+        .enumerate()
         .filter(|(_, r)| r.room_type == RoomType::Normal)
         .map(|(i, _)| i)
         .collect();
@@ -172,7 +182,8 @@ fn carve_secret_room(map: &mut Map, rng: &mut impl Rng) {
         };
 
         // Check bounds: secret room (3x3) must fit within map with 1-tile border
-        if secret_x < 1 || secret_y < 1
+        if secret_x < 1
+            || secret_y < 1
             || secret_x + 3 >= MAP_WIDTH as i32 - 1
             || secret_y + 3 >= MAP_HEIGHT as i32 - 1
         {
@@ -189,7 +200,9 @@ fn carve_secret_room(map: &mut Map, rng: &mut impl Rng) {
                     break;
                 }
             }
-            if !area_clear { break; }
+            if !area_clear {
+                break;
+            }
         }
         if !area_clear {
             continue;
@@ -257,23 +270,21 @@ fn generate_arena(_rng: &mut impl rand::Rng) -> Map {
     // Corridors connecting corner rooms to arena
     // Top corridors at y=10 (inside both top room interiors and arena top edge)
     for x in 14..=20 {
-        map.set_tile(x, 10, TileType::Floor);  // top-left room → arena
+        map.set_tile(x, 10, TileType::Floor); // top-left room → arena
     }
     for x in 59..=66 {
-        map.set_tile(x, 10, TileType::Floor);  // arena → top-right room
+        map.set_tile(x, 10, TileType::Floor); // arena → top-right room
     }
     // Bottom corridors at y=39 (inside both bottom room interiors and arena bottom)
     for x in 14..=20 {
-        map.set_tile(x, 39, TileType::Floor);  // bottom-left room → arena
+        map.set_tile(x, 39, TileType::Floor); // bottom-left room → arena
     }
     for x in 59..=66 {
-        map.set_tile(x, 39, TileType::Floor);  // arena → bottom-right room
+        map.set_tile(x, 39, TileType::Floor); // arena → bottom-right room
     }
 
     // Build rooms list
-    let mut rooms = vec![
-        Room::new(arena_x, arena_y, arena_w, arena_h),
-    ];
+    let mut rooms = vec![Room::new(arena_x, arena_y, arena_w, arena_h)];
     for &(rx, ry, rw, rh) in &corner_rooms {
         rooms.push(Room::new(rx, ry, rw, rh));
     }
