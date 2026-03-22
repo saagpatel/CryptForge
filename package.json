@@ -44,6 +44,7 @@
     "perf:build": "node scripts/perf/measure-build-time.mjs",
     "perf:assets": "bash scripts/perf/check-assets.sh",
     "perf:memory": "node --expose-gc scripts/perf/memory-smoke.mjs",
+    "perf:baseline:bootstrap": "node scripts/perf/bootstrap-baseline.mjs",
     "perf:lhci": "node ./node_modules/@lhci/cli/src/cli.js autorun --config=lighthouserc.json",
     "perf:lhci:prod": "node ./node_modules/@lhci/cli/src/cli.js autorun --config=.lighthouserc.production.json",
     "perf:summary": "node scripts/perf/summarize.mjs",
