@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
-import { cwd } from "node:process";
+import { cwd, platform } from "node:process";
 
 const projectRoot = cwd();
 let failed = false;
@@ -15,15 +15,22 @@ function warn(message) {
 }
 
 function checkCommand(bin, args = ["--version"]) {
-  try {
-    const out = execFileSync(bin, args, { encoding: "utf8" }).trim();
-    log(true, `${bin}: ${out}`);
-    return out;
-  } catch {
-    log(false, `${bin} is required but not available`);
-    failed = true;
-    return "";
+  const candidates =
+    platform === "win32" && bin === "npm" ? ["npm.cmd", "npm"] : [bin];
+
+  for (const candidate of candidates) {
+    try {
+      const out = execFileSync(candidate, args, { encoding: "utf8" }).trim();
+      log(true, `${bin}: ${out}`);
+      return out;
+    } catch {
+      // Try the next candidate before failing the check.
+    }
   }
+
+  log(false, `${bin} is required but not available`);
+  failed = true;
+  return "";
 }
 
 if (projectRoot.includes(":")) {
