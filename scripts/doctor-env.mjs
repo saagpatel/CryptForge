@@ -16,11 +16,23 @@ function warn(message) {
 
 function checkCommand(bin, args = ["--version"]) {
   const candidates =
-    platform === "win32" && bin === "npm" ? ["npm.cmd", "npm"] : [bin];
+    platform === "win32" && bin === "npm"
+      ? [
+          {
+            command: "cmd.exe",
+            commandArgs: ["/d", "/s", "/c", [bin, ...args].join(" ")],
+          },
+          { command: "npm.cmd", commandArgs: args, shell: true },
+          { command: "npm", commandArgs: args },
+        ]
+      : [{ command: bin, commandArgs: args }];
 
-  for (const candidate of candidates) {
+  for (const { command, commandArgs, shell } of candidates) {
     try {
-      const out = execFileSync(candidate, args, { encoding: "utf8" }).trim();
+      const out = execFileSync(command, commandArgs, {
+        encoding: "utf8",
+        shell,
+      }).trim();
       log(true, `${bin}: ${out}`);
       return out;
     } catch {
