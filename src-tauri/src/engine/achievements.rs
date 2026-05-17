@@ -225,13 +225,8 @@ fn compute_progress(
     match def.id {
         // Exploration — based on current run
         "reach_floor_5" | "reach_floor_10" | "reach_floor_20" => world.floor,
-        "endless_floor_15" => {
-            if world.floor > 10 {
-                world.floor
-            } else {
-                0
-            }
-        }
+        "endless_floor_15" if world.floor > 10 => world.floor,
+        "endless_floor_15" => 0,
 
         // Combat — accumulated across runs (read from DB + current run delta)
         "kill_50" | "kill_100" | "kill_500" => {
