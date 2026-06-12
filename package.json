@@ -70,7 +70,7 @@
     "@commitlint/config-conventional": "^19.8.1",
     "@commitlint/cz-commitlint": "^19.8.1",
     "@lhci/cli": "^0.15.1",
-    "commitizen": "^4.3.1",
+    "commitizen": "^4.3.2",
     "husky": "^9.1.7",
     "jsdom": "^27.0.0",
     "lint-staged": "^15.5.2",
