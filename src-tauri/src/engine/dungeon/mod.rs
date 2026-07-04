@@ -23,7 +23,7 @@ pub fn generate_floor(seed: u64, floor: u32) -> Map {
         1..=3 => bsp::generate_bsp(&mut rng),
         4 => {
             // 60% BSP, 40% cellular
-            if rng.gen::<f64>() < 0.6 {
+            if rng.random::<f64>() < 0.6 {
                 bsp::generate_bsp(&mut rng)
             } else {
                 cellular::generate_cellular(&mut rng)
@@ -31,7 +31,7 @@ pub fn generate_floor(seed: u64, floor: u32) -> Map {
         }
         5 => {
             // 40% BSP, 60% cellular
-            if rng.gen::<f64>() < 0.4 {
+            if rng.random::<f64>() < 0.4 {
                 bsp::generate_bsp(&mut rng)
             } else {
                 cellular::generate_cellular(&mut rng)
@@ -39,7 +39,7 @@ pub fn generate_floor(seed: u64, floor: u32) -> Map {
         }
         6 => {
             // 20% BSP, 80% cellular (end of mixed range)
-            if rng.gen::<f64>() < 0.2 {
+            if rng.random::<f64>() < 0.2 {
                 bsp::generate_bsp(&mut rng)
             } else {
                 cellular::generate_cellular(&mut rng)
@@ -62,7 +62,7 @@ pub fn generate_floor(seed: u64, floor: u32) -> Map {
     assign_room_types(&mut map.rooms, &mut rng, is_boss_floor, floor);
 
     // 50% chance to carve a secret room adjacent to a Normal room
-    if !is_boss_floor && rng.gen::<f32>() < 0.5 {
+    if !is_boss_floor && rng.random::<f32>() < 0.5 {
         carve_secret_room(&mut map, &mut rng);
     }
 
@@ -140,7 +140,7 @@ fn carve_secret_room(map: &mut Map, rng: &mut impl Rng) {
         return;
     }
 
-    let room_idx = normal_indices[rng.gen_range(0..normal_indices.len())];
+    let room_idx = normal_indices[rng.random_range(0..normal_indices.len())];
     let room = &map.rooms[room_idx];
 
     // Try each wall of the room to find space for a 3x3 secret chamber
@@ -148,7 +148,7 @@ fn carve_secret_room(map: &mut Map, rng: &mut impl Rng) {
     let mut dirs: Vec<u8> = vec![0, 1, 2, 3];
     // Shuffle directions
     for i in (1..dirs.len()).rev() {
-        let j = rng.gen_range(0..=i);
+        let j = rng.random_range(0..=i);
         dirs.swap(i, j);
     }
 
@@ -157,25 +157,25 @@ fn carve_secret_room(map: &mut Map, rng: &mut impl Rng) {
         let (secret_x, secret_y, connect_x, connect_y) = match dir {
             0 => {
                 // North wall: secret room is above
-                let cx = room.x + 1 + rng.gen_range(0..(room.width - 2).max(1));
+                let cx = room.x + 1 + rng.random_range(0..(room.width - 2).max(1));
                 let cy = room.y - 1; // wall tile
                 (cx - 1, room.y - 4, cx, cy) // 3x3 room starts 3 tiles above wall
             }
             1 => {
                 // South wall: secret room is below
-                let cx = room.x + 1 + rng.gen_range(0..(room.width - 2).max(1));
+                let cx = room.x + 1 + rng.random_range(0..(room.width - 2).max(1));
                 let cy = room.y + room.height; // wall tile
                 (cx - 1, room.y + room.height + 1, cx, cy)
             }
             2 => {
                 // West wall: secret room is left
-                let cy = room.y + 1 + rng.gen_range(0..(room.height - 2).max(1));
+                let cy = room.y + 1 + rng.random_range(0..(room.height - 2).max(1));
                 let cx = room.x - 1; // wall tile
                 (room.x - 4, cy - 1, cx, cy)
             }
             _ => {
                 // East wall: secret room is right
-                let cy = room.y + 1 + rng.gen_range(0..(room.height - 2).max(1));
+                let cy = room.y + 1 + rng.random_range(0..(room.height - 2).max(1));
                 let cx = room.x + room.width; // wall tile
                 (room.x + room.width + 1, cy - 1, cx, cy)
             }

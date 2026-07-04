@@ -136,29 +136,29 @@ const DEATH_EPITAPHS: &[&str] = &[
 
 /// Generate a fallback flavor description for an item.
 pub fn fallback_item_description(_item_name: &str, rng: &mut impl Rng) -> String {
-    let desc = ITEM_DESCRIPTIONS[rng.gen_range(0..ITEM_DESCRIPTIONS.len())];
+    let desc = ITEM_DESCRIPTIONS[rng.random_range(0..ITEM_DESCRIPTIONS.len())];
     format!("{}", desc)
 }
 
 /// Generate a fallback flavor name for an item.
 pub fn fallback_item_name(base_name: &str, rng: &mut impl Rng) -> String {
-    let prefix = ITEM_PREFIXES[rng.gen_range(0..ITEM_PREFIXES.len())];
-    let suffix = ITEM_SUFFIXES[rng.gen_range(0..ITEM_SUFFIXES.len())];
+    let prefix = ITEM_PREFIXES[rng.random_range(0..ITEM_PREFIXES.len())];
+    let suffix = ITEM_SUFFIXES[rng.random_range(0..ITEM_SUFFIXES.len())];
     format!("{} {} {}", prefix, base_name, suffix)
 }
 
 /// Generate a fallback flavor description for an enemy.
 pub fn fallback_enemy_description(_enemy_name: &str, rng: &mut impl Rng) -> String {
-    let desc = ENEMY_DESCRIPTIONS[rng.gen_range(0..ENEMY_DESCRIPTIONS.len())];
+    let desc = ENEMY_DESCRIPTIONS[rng.random_range(0..ENEMY_DESCRIPTIONS.len())];
     format!("{}", desc)
 }
 
 /// Generate a fallback room description.
 pub fn fallback_room_description(rng: &mut impl Rng) -> String {
-    ROOM_DESCRIPTIONS[rng.gen_range(0..ROOM_DESCRIPTIONS.len())].to_string()
+    ROOM_DESCRIPTIONS[rng.random_range(0..ROOM_DESCRIPTIONS.len())].to_string()
 }
 
 /// Generate a fallback death epitaph.
 pub fn fallback_death_epitaph(rng: &mut impl Rng) -> String {
-    DEATH_EPITAPHS[rng.gen_range(0..DEATH_EPITAPHS.len())].to_string()
+    DEATH_EPITAPHS[rng.random_range(0..DEATH_EPITAPHS.len())].to_string()
 }

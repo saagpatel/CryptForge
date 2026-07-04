@@ -614,7 +614,7 @@ impl World {
 
         // Check dodge before resolving attack
         let dodge_chance = target.combat.as_ref().map_or(0.0, |c| c.dodge_chance);
-        if dodge_chance > 0.0 && self.rng.gen::<f32>() < dodge_chance {
+        if dodge_chance > 0.0 && self.rng.random::<f32>() < dodge_chance {
             let target_name = target.name.clone();
             let attacker_name = attacker.name.clone();
             self.push_message(
@@ -867,7 +867,7 @@ impl World {
             self.enemies_killed += 1;
 
             // Gold drop: 1-5 scaled by floor; elite gets 2x, boss gets 5x
-            let gold_drop = self.rng.gen_range(1..=5) + self.floor;
+            let gold_drop = self.rng.random_range(1..=5) + self.floor;
             let gold_drop = if is_boss {
                 gold_drop * 5
             } else if is_elite {
@@ -879,7 +879,7 @@ impl World {
             events.push(GameEvent::GoldGained { amount: gold_drop });
 
             // Elite enemies have a 50% chance to drop an extra item
-            if is_elite && self.rng.gen::<f32>() < 0.50 {
+            if is_elite && self.rng.random::<f32>() < 0.50 {
                 let all_item_templates = crate::engine::items::all_items();
                 if let Some(mut item) =
                     placement::pick_weighted_item(self.floor, &mut self.rng, &all_item_templates)
@@ -1101,7 +1101,7 @@ impl World {
         };
 
         let boss_pos = boss.position;
-        let count = self.rng.gen_range(1..=2u32);
+        let count = self.rng.random_range(1..=2u32);
         let summon_name = if summon_archers {
             "Goblin Archer"
         } else {
@@ -1472,7 +1472,7 @@ impl World {
         if candidates.is_empty() {
             return None;
         }
-        let idx = self.rng.gen_range(0..candidates.len());
+        let idx = self.rng.random_range(0..candidates.len());
         Some(candidates[idx])
     }
 
@@ -1503,7 +1503,7 @@ impl World {
         if candidates.is_empty() {
             return None;
         }
-        let idx = self.rng.gen_range(0..candidates.len());
+        let idx = self.rng.random_range(0..candidates.len());
         Some(candidates[idx])
     }
 
@@ -1575,7 +1575,7 @@ impl World {
             Direction::SE,
             Direction::SW,
         ];
-        let dir = directions[self.rng.gen_range(0..directions.len())];
+        let dir = directions[self.rng.random_range(0..directions.len())];
         let new_pos = entity_pos.apply_direction(dir);
 
         if self.map.in_bounds(new_pos.x, new_pos.y)
@@ -1915,7 +1915,7 @@ impl World {
                 if floor_tiles.is_empty() {
                     self.push_message("The teleport trap fizzles...", LogSeverity::Info);
                 } else {
-                    let idx = self.rng.gen_range(0..floor_tiles.len());
+                    let idx = self.rng.random_range(0..floor_tiles.len());
                     let new_pos = floor_tiles[idx];
                     let from = self.get_entity(entity_id).unwrap().position;
                     self.move_entity(entity_id, new_pos);
@@ -2222,7 +2222,7 @@ impl World {
                     effect_desc = "teleportation failed".to_string();
                     self.push_message("The teleportation fizzles...", LogSeverity::Warning);
                 } else {
-                    let idx = self.rng.gen_range(0..floor_tiles.len());
+                    let idx = self.rng.random_range(0..floor_tiles.len());
                     let new_pos = floor_tiles[idx];
                     let from = self.get_entity(self.player_id).unwrap().position;
                     self.move_entity(self.player_id, new_pos);
@@ -3282,7 +3282,7 @@ impl World {
                 self.entities.retain(|e| e.id != entity_id);
 
                 // 30% drop random item
-                let drop_roll: f32 = self.rng.gen();
+                let drop_roll: f32 = self.rng.random();
                 let mut dropped_item_name = None;
                 if drop_roll < 0.30 {
                     let all_items = crate::engine::items::all_items();
@@ -3291,7 +3291,7 @@ impl World {
                         .filter(|t| t.min_floor <= self.floor && t.item_type != ItemType::Key)
                         .collect();
                     if let Some(template) =
-                        eligible.get(self.rng.gen_range(0..eligible.len().max(1)))
+                        eligible.get(self.rng.random_range(0..eligible.len().max(1)))
                     {
                         let item_entity = Entity {
                             id: placement::next_id(),
@@ -3426,7 +3426,7 @@ impl World {
                     }
                 }
 
-                let roll: f32 = self.rng.gen();
+                let roll: f32 = self.rng.random();
                 let effect_name;
                 if roll < 0.40 {
                     // Heal 20 HP
@@ -3456,7 +3456,7 @@ impl World {
                     );
                 } else if roll < 0.80 {
                     // +1 permanent random stat
-                    let stat_roll = self.rng.gen_range(0..3);
+                    let stat_roll = self.rng.random_range(0..3);
                     if let Some(player) = self.get_entity_mut(self.player_id) {
                         if let Some(ref mut c) = player.combat {
                             match stat_roll {
@@ -3530,7 +3530,7 @@ impl World {
                     e.glyph = 0x5F; // _ for open chest
                 }
 
-                let trapped = self.rng.gen::<f32>() < 0.25;
+                let trapped = self.rng.random::<f32>() < 0.25;
                 let mut item_names = Vec::new();
 
                 // Spawn contained items at chest position
@@ -3674,7 +3674,7 @@ impl World {
                 }
 
                 // Grant +1 random stat
-                let stat_roll = self.rng.gen_range(0..4);
+                let stat_roll = self.rng.random_range(0..4);
                 let stat_name;
                 if let Some(player) = self.get_entity_mut(self.player_id) {
                     match stat_roll {

@@ -51,7 +51,7 @@ pub fn resolve_attack(attacker: &Entity, target: &Entity, rng: &mut impl Rng) ->
     let variance = if base_damage > 0 {
         let range = (base_damage as f64 * 0.2).ceil() as i32;
         if range > 0 {
-            rng.gen_range(-range..=range)
+            rng.random_range(-range..=range)
         } else {
             0
         }
@@ -63,7 +63,7 @@ pub fn resolve_attack(attacker: &Entity, target: &Entity, rng: &mut impl Rng) ->
 
     // Crit check
     let crit_chance = attacker.combat.as_ref().map_or(0.0, |c| c.crit_chance);
-    let is_crit = rng.gen::<f32>() < crit_chance;
+    let is_crit = rng.random::<f32>() < crit_chance;
     if is_crit {
         damage = (damage as f64 * 1.5).round() as i32;
     }
@@ -99,7 +99,7 @@ pub fn resolve_ranged_attack(
     let variance = if base_damage > 0 {
         let range = (base_damage as f64 * 0.2).ceil() as i32;
         if range > 0 {
-            rng.gen_range(-range..=range)
+            rng.random_range(-range..=range)
         } else {
             0
         }
@@ -110,7 +110,7 @@ pub fn resolve_ranged_attack(
     let mut damage = (base_damage + variance).max(1);
 
     let crit_chance = attacker.combat.as_ref().map_or(0.0, |c| c.crit_chance);
-    let is_crit = rng.gen::<f32>() < crit_chance;
+    let is_crit = rng.random::<f32>() < crit_chance;
     if is_crit {
         damage = (damage as f64 * 1.5).round() as i32;
     }

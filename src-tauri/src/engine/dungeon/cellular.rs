@@ -18,7 +18,7 @@ pub fn generate_cellular(rng: &mut impl Rng) -> Map {
             // Keep a 1-tile border of walls
             if x == 0 || y == 0 || x == (MAP_WIDTH as i32 - 1) || y == (MAP_HEIGHT as i32 - 1) {
                 map.set_tile(x, y, TileType::Wall);
-            } else if rng.gen::<f64>() < WALL_CHANCE {
+            } else if rng.random::<f64>() < WALL_CHANCE {
                 map.set_tile(x, y, TileType::Wall);
             } else {
                 map.set_tile(x, y, TileType::Floor);

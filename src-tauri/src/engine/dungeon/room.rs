@@ -74,7 +74,7 @@ pub fn assign_room_types(
         if rooms[idx].room_type != RoomType::Normal {
             continue;
         }
-        let roll: f32 = rng.gen();
+        let roll: f32 = rng.random();
         rooms[idx].room_type = if roll < 0.25 {
             RoomType::Treasure
         } else if roll < 0.40 {
