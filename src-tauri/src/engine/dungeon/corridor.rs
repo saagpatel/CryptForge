@@ -5,7 +5,7 @@ use crate::engine::map::{Map, TileType};
 
 pub fn carve_l_corridor(map: &mut Map, start: Position, end: Position, rng: &mut impl Rng) {
     // L-shaped corridor: go horizontal first, then vertical (or vice versa randomly)
-    if rng.gen_bool(0.5) {
+    if rng.random_bool(0.5) {
         carve_horizontal(map, start.x, end.x, start.y);
         carve_vertical(map, start.y, end.y, end.x);
     } else {

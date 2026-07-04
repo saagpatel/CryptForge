@@ -159,12 +159,13 @@ pub fn spawn_entities(map: &Map, floor: u32, rng: &mut impl Rng) -> Vec<Entity> 
                         }
                     }
                     // 1-2 minions
-                    let minion_count = rng.gen_range(1..=2);
+                    let minion_count = rng.random_range(1..=2);
                     for _ in 0..minion_count {
                         if enemy_pool.is_empty() {
                             break;
                         }
-                        if let Some(enemy_name) = enemy_pool.get(rng.gen_range(0..enemy_pool.len()))
+                        if let Some(enemy_name) =
+                            enemy_pool.get(rng.random_range(0..enemy_pool.len()))
                         {
                             if let Some(template) =
                                 all_enemy_templates.iter().find(|t| t.name == *enemy_name)
@@ -189,7 +190,7 @@ pub fn spawn_entities(map: &Map, floor: u32, rng: &mut impl Rng) -> Vec<Entity> 
             RoomType::Treasure => {
                 // 1 chest with 1-2 items
                 if let Some(pos) = pick_free_pos(&positions, &occupied, rng) {
-                    let item_count = rng.gen_range(1..=2);
+                    let item_count = rng.random_range(1..=2);
                     let mut chest_items = Vec::new();
                     for _ in 0..item_count {
                         if let Some(item) = pick_weighted_item(floor, rng, &all_item_templates) {
@@ -204,7 +205,7 @@ pub fn spawn_entities(map: &Map, floor: u32, rng: &mut impl Rng) -> Vec<Entity> 
                     occupied.insert(pos);
                 }
                 // 1-3 loose items
-                let item_count = rng.gen_range(1..=3);
+                let item_count = rng.random_range(1..=3);
                 for _ in 0..item_count {
                     if let Some(pos) = pick_free_pos(&positions, &occupied, rng) {
                         if let Some(mut item) = pick_weighted_item(floor, rng, &all_item_templates)
@@ -217,7 +218,8 @@ pub fn spawn_entities(map: &Map, floor: u32, rng: &mut impl Rng) -> Vec<Entity> 
                 }
                 // 1 enemy guarding
                 if !enemy_pool.is_empty() {
-                    if let Some(enemy_name) = enemy_pool.get(rng.gen_range(0..enemy_pool.len())) {
+                    if let Some(enemy_name) = enemy_pool.get(rng.random_range(0..enemy_pool.len()))
+                    {
                         if let Some(template) =
                             all_enemy_templates.iter().find(|t| t.name == *enemy_name)
                         {
@@ -232,7 +234,7 @@ pub fn spawn_entities(map: &Map, floor: u32, rng: &mut impl Rng) -> Vec<Entity> 
             }
             RoomType::Library | RoomType::Armory => {
                 // 2-3 items
-                let item_count = rng.gen_range(2..=3);
+                let item_count = rng.random_range(2..=3);
                 for _ in 0..item_count {
                     if let Some(pos) = pick_free_pos(&positions, &occupied, rng) {
                         if let Some(mut item) = pick_weighted_item(floor, rng, &all_item_templates)
@@ -247,7 +249,7 @@ pub fn spawn_entities(map: &Map, floor: u32, rng: &mut impl Rng) -> Vec<Entity> 
             RoomType::Shrine => {
                 // 1 fountain, altar, or anvil
                 if let Some(pos) = pick_free_pos(&positions, &occupied, rng) {
-                    let roll = rng.gen::<f32>();
+                    let roll = rng.random::<f32>();
                     if roll < 0.33 {
                         entities.push(create_interactable(InteractionType::Fountain, pos, None));
                     } else if roll < 0.66 {
@@ -277,12 +279,13 @@ pub fn spawn_entities(map: &Map, floor: u32, rng: &mut impl Rng) -> Vec<Entity> 
             RoomType::Normal => {
                 // Enemies: floor/2 + rng(1,3)
                 let enemy_count =
-                    (floor as i32 / 2 + rng.gen_range(1..=3)).min(positions.len() as i32 / 2);
+                    (floor as i32 / 2 + rng.random_range(1..=3)).min(positions.len() as i32 / 2);
                 for _ in 0..enemy_count {
                     if enemy_pool.is_empty() {
                         break;
                     }
-                    if let Some(enemy_name) = enemy_pool.get(rng.gen_range(0..enemy_pool.len())) {
+                    if let Some(enemy_name) = enemy_pool.get(rng.random_range(0..enemy_pool.len()))
+                    {
                         if let Some(template) =
                             all_enemy_templates.iter().find(|t| t.name == *enemy_name)
                         {
@@ -295,7 +298,7 @@ pub fn spawn_entities(map: &Map, floor: u32, rng: &mut impl Rng) -> Vec<Entity> 
                     }
                 }
                 // 30% chance of an item
-                if rng.gen::<f32>() < 0.30 {
+                if rng.random::<f32>() < 0.30 {
                     if let Some(pos) = pick_free_pos(&positions, &occupied, rng) {
                         if let Some(mut item) = pick_weighted_item(floor, rng, &all_item_templates)
                         {
@@ -306,7 +309,7 @@ pub fn spawn_entities(map: &Map, floor: u32, rng: &mut impl Rng) -> Vec<Entity> 
                     }
                 }
                 // 0-2 barrels
-                let barrel_count = rng.gen_range(0..=2);
+                let barrel_count = rng.random_range(0..=2);
                 for _ in 0..barrel_count {
                     if let Some(pos) = pick_free_pos(&positions, &occupied, rng) {
                         entities.push(create_interactable(InteractionType::Barrel, pos, None));
@@ -318,7 +321,7 @@ pub fn spawn_entities(map: &Map, floor: u32, rng: &mut impl Rng) -> Vec<Entity> 
     }
 
     // Place 1-3 traps
-    let trap_count = rng.gen_range(1..=3);
+    let trap_count = rng.random_range(1..=3);
     let all_floor_positions: Vec<Position> = (0..map.width as i32)
         .flat_map(|x| (0..map.height as i32).map(move |y| Position::new(x, y)))
         .filter(|p| map.get_tile(p.x, p.y) == TileType::Floor && !occupied.contains(p))
@@ -326,7 +329,7 @@ pub fn spawn_entities(map: &Map, floor: u32, rng: &mut impl Rng) -> Vec<Entity> 
 
     for _ in 0..trap_count {
         if let Some(pos) = pick_free_pos(&all_floor_positions, &occupied, rng) {
-            let trap_type = match rng.gen_range(0..4) {
+            let trap_type = match rng.random_range(0..4) {
                 0 => TrapType::Spike {
                     damage: 5 + floor as i32,
                 },
@@ -372,13 +375,13 @@ pub fn spawn_entities(map: &Map, floor: u32, rng: &mut impl Rng) -> Vec<Entity> 
     }
 
     // 15% chance per non-boss floor: spawn an NPC ally (Prisoner)
-    if boss_name.is_none() && rng.gen::<f32>() < 0.15 {
+    if boss_name.is_none() && rng.random::<f32>() < 0.15 {
         let normal_rooms: Vec<&Room> = map
             .rooms
             .iter()
             .filter(|r| r.room_type == RoomType::Normal)
             .collect();
-        if let Some(ally_room) = normal_rooms.get(rng.gen_range(0..normal_rooms.len().max(1))) {
+        if let Some(ally_room) = normal_rooms.get(rng.random_range(0..normal_rooms.len().max(1))) {
             let positions = get_floor_positions(map, ally_room);
             if let Some(pos) = pick_free_pos(&positions, &occupied, rng) {
                 entities.push(create_ally(rng, pos));
@@ -394,7 +397,7 @@ pub fn spawn_entities(map: &Map, floor: u32, rng: &mut impl Rng) -> Vec<Entity> 
             .iter()
             .filter(|r| r.room_type != RoomType::Boss && r.room_type != RoomType::Start)
             .collect();
-        if let Some(key_room) = key_rooms.get(rng.gen_range(0..key_rooms.len().max(1))) {
+        if let Some(key_room) = key_rooms.get(rng.random_range(0..key_rooms.len().max(1))) {
             let positions = get_floor_positions(map, key_room);
             if let Some(pos) = pick_free_pos(&positions, &occupied, rng) {
                 entities.push(create_item("Boss Key", pos, &all_item_templates));
@@ -431,7 +434,7 @@ fn pick_free_pos(
     if free.is_empty() {
         return None;
     }
-    Some(free[rng.gen_range(0..free.len())])
+    Some(free[rng.random_range(0..free.len())])
 }
 
 fn create_enemy_from_template(
@@ -444,8 +447,8 @@ fn create_enemy_from_template(
     let is_boss = matches!(template.ai, AIBehavior::Boss(_));
 
     // 12% chance for non-boss enemies to become elite
-    let elite_prefix = if !is_boss && rng.gen::<f32>() < 0.12 {
-        Some(match rng.gen_range(0..4) {
+    let elite_prefix = if !is_boss && rng.random::<f32>() < 0.12 {
+        Some(match rng.random_range(0..4) {
             0 => ElitePrefix::Frenzied,
             1 => ElitePrefix::Armored,
             2 => ElitePrefix::Venomous,
@@ -616,7 +619,7 @@ pub(crate) fn pick_weighted_item(
     }
 
     let total_weight: u32 = eligible.iter().map(|t| t.rarity.weight()).sum();
-    let mut roll = rng.gen_range(0..total_weight);
+    let mut roll = rng.random_range(0..total_weight);
 
     for t in &eligible {
         let w = t.rarity.weight();
@@ -681,7 +684,7 @@ fn generate_shop_inventory(
         })
         .collect();
 
-    let count = rng.gen_range(4..=6).min(eligible.len());
+    let count = rng.random_range(4..=6).min(eligible.len());
     let mut items = Vec::new();
     let mut used_names: HashSet<String> = HashSet::new();
 
@@ -689,7 +692,7 @@ fn generate_shop_inventory(
         if items.len() >= count {
             break;
         }
-        let idx = rng.gen_range(0..eligible.len());
+        let idx = rng.random_range(0..eligible.len());
         let t = eligible[idx];
         if used_names.contains(t.name) {
             continue;
@@ -800,7 +803,7 @@ fn create_interactable(
 
 fn create_ally(rng: &mut impl Rng, pos: Position) -> Entity {
     // Three ally variants: Sellsword (melee), Healer (low atk), Scout (ranged-ish)
-    let variant = rng.gen_range(0..3);
+    let variant = rng.random_range(0..3);
     let (name, hp, attack, defense, speed) = match variant {
         0 => ("Sellsword", 30, 5, 2, 100),
         1 => ("Healer", 20, 2, 1, 90),

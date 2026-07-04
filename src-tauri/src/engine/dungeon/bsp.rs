@@ -53,14 +53,14 @@ impl BspNode {
             } else if self.h as f32 / self.w as f32 > 1.25 {
                 false
             } else {
-                rng.gen_bool(0.5)
+                rng.random_bool(0.5)
             }
         } else {
             can_split_h
         };
 
         if split_horizontal {
-            let split = rng.gen_range(MIN_NODE_W..=(self.w - MIN_NODE_W));
+            let split = rng.random_range(MIN_NODE_W..=(self.w - MIN_NODE_W));
             let mut left = BspNode::new(self.x, self.y, split, self.h);
             let mut right = BspNode::new(self.x + split, self.y, self.w - split, self.h);
             left.split(rng, depth + 1, max_depth);
@@ -68,7 +68,7 @@ impl BspNode {
             self.left = Some(Box::new(left));
             self.right = Some(Box::new(right));
         } else {
-            let split = rng.gen_range(MIN_NODE_H..=(self.h - MIN_NODE_H));
+            let split = rng.random_range(MIN_NODE_H..=(self.h - MIN_NODE_H));
             let mut left = BspNode::new(self.x, self.y, self.w, split);
             let mut right = BspNode::new(self.x, self.y + split, self.w, self.h - split);
             left.split(rng, depth + 1, max_depth);
@@ -84,10 +84,10 @@ impl BspNode {
             right.create_rooms(rng);
         } else {
             // Leaf node — create a room
-            let room_w = rng.gen_range(MIN_ROOM_W..=MAX_ROOM_W.min(self.w - 2));
-            let room_h = rng.gen_range(MIN_ROOM_H..=MAX_ROOM_H.min(self.h - 2));
-            let room_x = self.x + rng.gen_range(1..=(self.w - room_w - 1).max(1));
-            let room_y = self.y + rng.gen_range(1..=(self.h - room_h - 1).max(1));
+            let room_w = rng.random_range(MIN_ROOM_W..=MAX_ROOM_W.min(self.w - 2));
+            let room_h = rng.random_range(MIN_ROOM_H..=MAX_ROOM_H.min(self.h - 2));
+            let room_x = self.x + rng.random_range(1..=(self.w - room_w - 1).max(1));
+            let room_y = self.y + rng.random_range(1..=(self.h - room_h - 1).max(1));
             self.room = Some(Room::new(room_x, room_y, room_w, room_h));
         }
     }
