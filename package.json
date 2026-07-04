@@ -77,6 +77,31 @@
     "prettier": "^3.8.1",
     "vitest": "^4.1.8"
   },
+  "overrides": {
+    "path-to-regexp": "^0.1.13",
+    "tmp": "^0.2.6",
+    "@lhci/cli": {
+      "uuid": "^11.1.1"
+    },
+    "@lhci/utils": {
+      "js-yaml": "^3.15.0"
+    },
+    "cosmiconfig": {
+      "js-yaml": "^4.2.0"
+    },
+    "jsdom": {
+      "ws": "^8.21.0"
+    },
+    "lighthouse": {
+      "ws": "^7.5.11"
+    },
+    "micromatch": {
+      "picomatch": "^2.3.2"
+    },
+    "puppeteer-core": {
+      "ws": "^8.21.0"
+    }
+  },
   "config": {
     "commitizen": {
       "path": "@commitlint/cz-commitlint"
