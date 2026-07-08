@@ -1,4 +1,4 @@
-use rand::Rng;
+use rand::{Rng, RngExt};
 
 const ITEM_PREFIXES: &[&str] = &[
     "Ancient",

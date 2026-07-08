@@ -1,6 +1,6 @@
 use std::collections::{HashSet, VecDeque};
 
-use rand::Rng;
+use rand::{Rng, RngExt};
 
 use crate::engine::entity::Position;
 use crate::engine::map::{Map, Room, TileType, MAP_HEIGHT, MAP_WIDTH};
