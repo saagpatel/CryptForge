@@ -1,4 +1,4 @@
-use rand::Rng;
+use rand::{Rng, RngExt};
 
 use crate::engine::entity::Position;
 use crate::engine::map::{Room, RoomType};

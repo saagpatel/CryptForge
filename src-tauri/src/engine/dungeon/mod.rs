@@ -5,7 +5,7 @@ pub mod placement;
 pub mod room;
 
 use rand::rngs::StdRng;
-use rand::{Rng, SeedableRng};
+use rand::{Rng, RngExt, SeedableRng};
 
 use crate::engine::map::{Map, TileType};
 
