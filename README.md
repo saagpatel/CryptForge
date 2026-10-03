@@ -18,7 +18,7 @@ CryptForge is a turn-based roguelike that runs as a native desktop application. 
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 22.12+ or 24–25 and npm 10+ (package engines allow 20–25; locked Vite/jsdom need at least 20.19 on Node 20)
 - Rust stable toolchain (`rustup`)
 - Tauri system dependencies: [tauri.app/start/prerequisites](https://tauri.app/start/prerequisites/)
 
@@ -27,7 +27,7 @@ CryptForge is a turn-based roguelike that runs as a native desktop application. 
 ```bash
 git clone https://github.com/saagpatel/CryptForge
 cd CryptForge
-npm install
+npm ci
 ```
 
 ### Usage
@@ -56,3 +56,5 @@ Game state and logic are owned by the Rust backend, exposed to the React fronten
 ## License
 
 MIT
+
+See [CONTRIBUTING.md](CONTRIBUTING.md#verification) for focused checks, the full verification lanes, and local preview limits.
