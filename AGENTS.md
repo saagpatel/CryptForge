@@ -22,7 +22,7 @@ CryptForge is a native desktop roguelike built with Tauri 2, Rust game logic, an
 
 ## Current State
 
-The repo is active game/product work. Existing local changes include PR-template metadata and an untracked lockfile, so this recovery pass should only add portfolio context.
+The repo is active game/product work. The PR template and both npm and Cargo lockfiles are tracked.
 
 ## Stack
 
@@ -52,6 +52,6 @@ npm run dev:lean
 
 ## Next Recommended Move
 
-Resolve the folder/path and PR-template drift separately, then verify the Rust game rules and React input flow before shipping gameplay changes.
+Resolve the folder-name whitespace drift separately, then verify the Rust game rules and React input flow before shipping gameplay changes.
 
 <!-- portfolio-context:end -->
