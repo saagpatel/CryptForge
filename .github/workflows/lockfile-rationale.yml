@@ -1,5 +1,8 @@
 name: lockfile-rationale
 
+permissions:
+  contents: read
+
 on:
   pull_request:
     types: [opened, synchronize, reopened, edited]
@@ -7,15 +10,15 @@ on:
 jobs:
   enforce:
     if: ${{ github.event.pull_request.user.login != 'dependabot[bot]' && !startsWith(github.event.pull_request.head.ref, 'dependabot/') }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       pull-requests: read
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v45.0.2
         id: changed
-      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         if: contains(steps.changed.outputs.all_changed_files, 'pnpm-lock.yaml') || contains(steps.changed.outputs.all_changed_files, 'package-lock.json') || contains(steps.changed.outputs.all_changed_files, 'yarn.lock')
         with:
           script: |
