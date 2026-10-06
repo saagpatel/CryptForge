@@ -1,5 +1,8 @@
 name: ci-pr
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main, master]
@@ -17,16 +20,16 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "20"
           cache: "npm"
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067
+        uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d # stable as of 2026-10-06
         with:
           toolchain: stable
           components: rustfmt, clippy
@@ -62,7 +65,7 @@ jobs:
           node scripts/perf/compare-metric.mjs .perf-baselines/build-time.json .perf-results/build-time.json buildMs 0.15
 
       - name: Upload perf summary
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: perf-summary
           retention-days: 7
